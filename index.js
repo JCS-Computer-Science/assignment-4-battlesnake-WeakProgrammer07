@@ -26,6 +26,7 @@ const config = {
 //TODO: respond to GET requests on "/" with the config object above
  app.get("/", function (req,res){
     res.status(200).json(config)
+    res.end()
  })
 
 //TODO: respond to POST requests on "/start". Your response itself is ignored, but must have status code "200"

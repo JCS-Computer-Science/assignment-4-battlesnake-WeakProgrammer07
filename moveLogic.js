@@ -47,7 +47,7 @@ export default function move(gameState){
     // TODO: Step 2 - Prevent your Battlesnake from colliding with itself
     // gameState.you contains an object representing your snake, including its coordinates
     // https://docs.battlesnake.com/api/objects/battlesnake
-
+    
     for(let i = 1; i < gameState.you.body.length; i++){
         if(myHead.x + 1 == gameState.you.body[i].x  && myHead.y == gameState.you.body[i].y){
             moveSafety.right = false;
@@ -66,22 +66,47 @@ export default function move(gameState){
     // TODO: Step 3 - Prevent your Battlesnake from colliding with other Battlesnakes
     // gameState.board.snakes contains an array of enemy snake objects, which includes their coordinates
     // https://docs.battlesnake.com/api/objects/battlesnake
-for(let j = 0; j < gameState.snakes.length; j++){
-    for(let i = 0; i < gameState.snakes[j].body.length; i++){
-        if(myHead.x + 1 == gameState.snakes[j].body[i].x  && myHead.y == gameState.snakes[j].body[i].y){
-            moveSafety.right = false;
+    for (let j = 0; j < gameState.board.snakes.length; j++) {
+        let enemySnake = gameState.board.snakes[j];
+        
+        //prevents me hitting the bodies
+        for (let i = 0; i < enemySnake.body.length; i++) {
+            const segment = enemySnake.body[i];
+    
+            if (myHead.x + 1 == segment.x && myHead.y == segment.y) {
+                moveSafety.right = false;
+            }
+            if (myHead.x - 1 == segment.x && myHead.y == segment.y) {
+                moveSafety.left = false;
+            }
+            if (myHead.x == segment.x && myHead.y + 1 == segment.y) {
+                moveSafety.up = false;
+            }
+            if (myHead.x == segment.x && myHead.y - 1 == segment.y) {
+                moveSafety.down = false;
+            }
         }
-        if(myHead.x  -1 == gameState.snakes[j].body[i].x && myHead.y == gameState.snakes[j].body[i].y){
-            moveSafety.left = false;
-        }
-        if(myHead.x == gameState.snakes[j].body[i].x  && myHead.y + 1== gameState.snakes[j].body[i].y ){
-            moveSafety.up = false;
-        }
-        if(myHead.x == gameState.snakes[j].body[i].x && myHead.y -1 == gameState.snakes[j].body[i].y){
-            moveSafety.down = false;
+
+        let enemyHead = enemySnake.body[0];
+        let myLength = gameState.you.length;
+        let enemyLength = enemySnake.length;
+    
+        //only applies if they are longer (where I would lose)
+        if (enemyLength >= myLength) {
+            if (myHead.x + 1 == enemyHead.x && myHead.y == enemyHead.y) {
+                moveSafety.right = false;
+            }
+            if (myHead.x - 1 == enemyHead.x && myHead.y == enemyHead.y) {
+                moveSafety.left = false;
+            }
+            if (myHead.x == enemyHead.x && myHead.y + 1 == enemyHead.y) {
+                moveSafety.up = false;
+            }
+            if (myHead.x == enemyHead.x && myHead.y - 1 == enemyHead.y) {
+                moveSafety.down = false;
+            }
         }
     }
-}
     
     
     // Are there any safe moves left?
