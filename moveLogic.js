@@ -10,6 +10,7 @@ export default function move(gameState){
     const myHead = gameState.you.body[0];
     const myNeck = gameState.you.body[1];
     
+    
     if (myNeck.x < myHead.x) {        // Neck is left of head, don't move left
         moveSafety.left = false;
         
@@ -27,19 +28,19 @@ export default function move(gameState){
     // gameState.board contains an object representing the game board including its width and height
     // https://docs.battlesnake.com/api/objects/board
 
-    if(myNeck.x == 0){
+    if(myHead.x == 0){
         moveSafety.left = false;
     }
 
-    if(myNeck.x == (gameState.board.width) -1){
+    if(myHead.x == (gameState.board.width) -1){
         moveSafety.right = false;
     }
 
-    if(myNeck.y == 0){
+    if(myHead.y == 0){
         moveSafety.down = false;
     }
 
-    if(myNeck.y == (gameState.board.height) -1){
+    if(myHead.y == (gameState.board.height) -1){
         moveSafety.up = false;
     }
     
@@ -47,12 +48,41 @@ export default function move(gameState){
     // gameState.you contains an object representing your snake, including its coordinates
     // https://docs.battlesnake.com/api/objects/battlesnake
 
-    
-    
+    for(let i = 1; i < gameState.you.body.length; i++){
+        if(myHead.x + 1 == gameState.you.body[i].x  && myHead.y == gameState.you.body[i].y){
+            moveSafety.right = false;
+        }
+        if(myHead.x  -1 == gameState.you.body[i].x && myHead.y == gameState.you.body[i].y){
+            moveSafety.left = false;
+        }
+        if(myHead.x == gameState.you.body[i].x  && myHead.y + 1== gameState.you.body[i].y ){
+            moveSafety.up = false;
+        }
+        if(myHead.x == gameState.you.body[i].x && myHead.y -1 == gameState.you.body[i].y){
+            moveSafety.down = false;
+        }
+    }
     
     // TODO: Step 3 - Prevent your Battlesnake from colliding with other Battlesnakes
     // gameState.board.snakes contains an array of enemy snake objects, which includes their coordinates
     // https://docs.battlesnake.com/api/objects/battlesnake
+for(let j = 0; j < gameState.snakes.length; j++){
+    for(let i = 0; i < gameState.snakes[j].body.length; i++){
+        if(myHead.x + 1 == gameState.snakes[j].body[i].x  && myHead.y == gameState.snakes[j].body[i].y){
+            moveSafety.right = false;
+        }
+        if(myHead.x  -1 == gameState.snakes[j].body[i].x && myHead.y == gameState.snakes[j].body[i].y){
+            moveSafety.left = false;
+        }
+        if(myHead.x == gameState.snakes[j].body[i].x  && myHead.y + 1== gameState.snakes[j].body[i].y ){
+            moveSafety.up = false;
+        }
+        if(myHead.x == gameState.snakes[j].body[i].x && myHead.y -1 == gameState.snakes[j].body[i].y){
+            moveSafety.down = false;
+        }
+    }
+}
+    
     
     // Are there any safe moves left?
     

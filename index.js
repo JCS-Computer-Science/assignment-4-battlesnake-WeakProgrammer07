@@ -41,6 +41,10 @@ app.post("/start", function(req, res){
 //      a "shout" property. The request body again contains objects representing the game state
 //      https://docs.battlesnake.com/api/requests/move
 
+app.post("/move", function(req,res){
+  res.status(200).json(move(req.body))
+})
+
 //TODO: respond to POST requests on "/end", which signals the end of a game. Your response itself is ignored, 
 //      but must have status code "200" the request body will contain objects representing the game
 //      https://docs.battlesnake.com/api/requests/end
