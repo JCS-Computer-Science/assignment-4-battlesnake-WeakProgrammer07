@@ -93,17 +93,25 @@ export default function move(gameState){
     
         //only applies if they are longer (where I would lose)
         if (enemyLength >= myLength) {
-            if (myHead.x + 1 == enemyHead.x && myHead.y == enemyHead.y) {
-                moveSafety.right = false;
-            }
-            if (myHead.x - 1 == enemyHead.x && myHead.y == enemyHead.y) {
-                moveSafety.left = false;
-            }
-            if (myHead.x == enemyHead.x && myHead.y + 1 == enemyHead.y) {
-                moveSafety.up = false;
-            }
-            if (myHead.x == enemyHead.x && myHead.y - 1 == enemyHead.y) {
-                moveSafety.down = false;
+            let enemyMoves = [
+                {x: enemyHead.x + 1,y: enemyHead.y},
+                {x: enemyHead.x - 1,y: enemyHead.y},
+                {x: enemyHead.x ,y: enemyHead.y + 1},
+                {x: enemyHead.x ,y: enemyHead.y - 1},
+            ]
+            for(const moves of enemyMoves){
+                if (myHead.x + 1 == move.x && myHead.y == move.y) {
+                    moveSafety.right = false;
+                }
+                if (myHead.x - 1 == move.x && myHead.y == move.y) {
+                    moveSafety.left = false;
+                }
+                if (myHead.x == move.x && myHead.y + 1 == move.y) {
+                    moveSafety.up = false;
+                }
+                if (myHead.x == move.x && myHead.y - 1 == move.y) {
+                    moveSafety.down = false;
+                }
             }
         }
     }
