@@ -68,11 +68,11 @@ export default function move(gameState){
     // https://docs.battlesnake.com/api/objects/battlesnake
     for (let j = 0; j < gameState.board.snakes.length; j++) {
         let enemySnake = gameState.board.snakes[j];
-        
+        if (enemySnake.id === gameState.you.id) continue;
         //prevents me hitting the bodies
         for (let i = 0; i < enemySnake.body.length; i++) {
             const segment = enemySnake.body[i];
-    
+       
             if (myHead.x + 1 == segment.x && myHead.y == segment.y) {
                 moveSafety.right = false;
             }
@@ -88,28 +88,29 @@ export default function move(gameState){
         }
 
         let enemyHead = enemySnake.body[0];
-        let myLength = gameState.you.length;
-        let enemyLength = enemySnake.length;
+        let myLength = gameState.you.body.length;
+        let enemyLength = enemySnake.body.length;
     
         //only applies if they are longer (where I would lose)
         if (enemyLength >= myLength) {
             let enemyMoves = [
-                {x: enemyHead.x + 1,y: enemyHead.y},
-                {x: enemyHead.x - 1,y: enemyHead.y},
-                {x: enemyHead.x ,y: enemyHead.y + 1},
-                {x: enemyHead.x ,y: enemyHead.y - 1},
-            ]
-            for(const moves of enemyMoves){
-                if (myHead.x + 1 == move.x && myHead.y == move.y) {
+                { x: enemyHead.x + 1, y: enemyHead.y },
+                { x: enemyHead.x - 1, y: enemyHead.y },
+                { x: enemyHead.x,     y: enemyHead.y + 1 },
+                { x: enemyHead.x,     y: enemyHead.y - 1 },
+            ];
+        
+            for (const move of enemyMoves) {
+                if (myHead.x + 1 === move.x && myHead.y === move.y) {
                     moveSafety.right = false;
                 }
-                if (myHead.x - 1 == move.x && myHead.y == move.y) {
+                if (myHead.x - 1 === move.x && myHead.y === move.y) {
                     moveSafety.left = false;
                 }
-                if (myHead.x == move.x && myHead.y + 1 == move.y) {
+                if (myHead.x === move.x && myHead.y + 1 === move.y) {
                     moveSafety.up = false;
                 }
-                if (myHead.x == move.x && myHead.y - 1 == move.y) {
+                if (myHead.x === move.x && myHead.y - 1 === move.y) {
                     moveSafety.down = false;
                 }
             }
