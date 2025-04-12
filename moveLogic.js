@@ -48,7 +48,7 @@ export default function move(gameState){
     // gameState.you contains an object representing your snake, including its coordinates
     // https://docs.battlesnake.com/api/objects/battlesnake
     
-    for(let i = 1; i < gameState.you.body.length; i++){
+    for(let i = 1; i < gameState.you.body.length - 1; i++){
         if(myHead.x + 1 == gameState.you.body[i].x  && myHead.y == gameState.you.body[i].y){
             moveSafety.right = false;
         }
