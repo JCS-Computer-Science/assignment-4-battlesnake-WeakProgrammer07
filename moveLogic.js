@@ -66,7 +66,15 @@ export default function move(gameState){
     // TODO: Step 3 - Prevent your Battlesnake from colliding with other Battlesnakes
     // gameState.board.snakes contains an array of enemy snake objects, which includes their coordinates
     // https://docs.battlesnake.com/api/objects/battlesnake
+    let riskyMoves = {
+        up: false,
+        down: false,
+        left: false,
+        right: false
+    };
+
     for (let j = 0; j < gameState.board.snakes.length; j++) {
+        
         let enemySnake = gameState.board.snakes[j];
         if (enemySnake.id === gameState.you.id) continue;
         //prevents me hitting the bodies
@@ -75,15 +83,19 @@ export default function move(gameState){
        
             if (myHead.x + 1 == segment.x && myHead.y == segment.y) {
                 moveSafety.right = false;
+                riskyMoves.right = true
             }
             if (myHead.x - 1 == segment.x && myHead.y == segment.y) {
                 moveSafety.left = false;
+                riskyMoves.left = true
             }
             if (myHead.x == segment.x && myHead.y + 1 == segment.y) {
                 moveSafety.up = false;
+                riskyMoves.up = true
             }
             if (myHead.x == segment.x && myHead.y - 1 == segment.y) {
                 moveSafety.down = false;
+                riskyMoves.down = true
             }
         }
 
@@ -116,7 +128,47 @@ export default function move(gameState){
             }
         }
     }
+
+    // TODO: Step 4 - Move towards food instead of random, to regain health and survive longer
+    // gameState.board.food contains an array of food coordinates https://docs.battlesnake.com/api/objects/board
+    let priorityMoves = {
+        up: false,
+        down: false,
+        left: false,
+        right: false
+    }
     
+    function findClosestFood(locations){
+        let totalDis = Math.abs(myHead.y - locations[0].y) + Math.abs(myHead.x - locations[0].x)
+        let totalIndex = 0
+        for(let i = 0; i < locations.length; i++){
+            let xDis = Math.abs(myHead.x - locations[i].x)
+            let yDis = Math.abs(myHead.y - locations[i].y)
+            let newtotalDis = xDis + yDis
+            
+            if(newtotalDis < totalDis){
+                totalDis = newtotalDis
+                totalIndex = i
+            }
+        }
+        return totalIndex
+    }
+
+    if(gameState.you.health < 65){
+        let foodIndex = findClosestFood(gameState.board.food)
+        if(gameState.board.food[foodIndex].x > myHead.x){
+            priorityMoves.right = true
+        }
+        if(gameState.board.food[foodIndex].x < myHead.x){
+            priorityMoves.left = true
+        }
+        if(gameState.board.food[foodIndex].y > myHead.y){
+            priorityMoves.up = true
+        }
+        if(gameState.board.food[foodIndex].y < myHead.y){
+            priorityMoves.down = true
+        }
+    }
     
     // Are there any safe moves left?
     
@@ -124,17 +176,25 @@ export default function move(gameState){
     //.filter() filters the array based on the function provided as an argument (using arrow function syntax here)
     //In this case we want to filter out any of these directions for which moveSafety[direction] == false
     const safeMoves = Object.keys(moveSafety).filter(direction => moveSafety[direction]);
+    const priorityMovesFinal = Object.keys(priorityMoves).filter(direction => priorityMoves[direction]);
     if (safeMoves.length == 0) {
-        console.log(`MOVE ${gameState.turn}: No safe moves detected! Moving down`);
-        return { move: "down" };
+        console.log(`MOVE ${gameState.turn}: No safe moves detected!`)
+        return { move: moveSafety[Math.floor(Math.random() * moveSafety.length)] };
     }
     
     // Choose a random move from the safe moves
+    const nextPriorityMove1 = priorityMovesFinal[0];
+    const nextPriorityMove2 = priorityMovesFinal[1];
     const nextMove = safeMoves[Math.floor(Math.random() * safeMoves.length)];
-    
-    // TODO: Step 4 - Move towards food instead of random, to regain health and survive longer
-    // gameState.board.food contains an array of food coordinates https://docs.battlesnake.com/api/objects/board
-    
+
+    if(safeMoves.includes(nextPriorityMove1)){
+        console.log(`Priority MOVE (1) ${gameState.turn}: ${nextPriorityMove1}`)
+        return { move: nextPriorityMove1 };
+    } else if (safeMoves.includes(nextPriorityMove2)) {
+        console.log(`Priority MOVE (2) ${gameState.turn}: ${nextPriorityMove2}`)
+        return { move: nextPriorityMove2 };
+    }
+
     console.log(`MOVE ${gameState.turn}: ${nextMove}`)
     return { move: nextMove };
 }
