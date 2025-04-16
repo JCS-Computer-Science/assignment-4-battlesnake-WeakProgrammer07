@@ -17,7 +17,7 @@ export default function move(gameState){
         left: false,
         right: false
     };
-    
+    let foodLimit = 20
     // We've included code to prevent your Battlesnake from moving backwards
     
     const myHead = gameState.you.body[0];
@@ -25,9 +25,9 @@ export default function move(gameState){
 
     function safeBack(){
         moveSafety.left  = (myNeck.x < myHead.x) ? false : moveSafety.left;
-    moveSafety.right  = (myNeck.x > myHead.x) ? false : moveSafety.right;
-    moveSafety.down  = (myNeck.y < myHead.y) ? false : moveSafety.down;
-    moveSafety.up  = (myNeck.y > myHead.y) ? false : moveSafety.up;
+        moveSafety.right  = (myNeck.x > myHead.x) ? false : moveSafety.right;
+        moveSafety.down  = (myNeck.y < myHead.y) ? false : moveSafety.down;
+        moveSafety.up  = (myNeck.y > myHead.y) ? false : moveSafety.up;
     }
     safeBack()
     
@@ -102,7 +102,7 @@ export default function move(gameState){
                     riskyMoves.down = true
                 }
             }
-            enemyDodging()
+            enemyDodging() // because I say the other snake could eat itself, and that is risky, so even if it says that I should not do it it does
             selfPreservation()
         }
     }
@@ -126,7 +126,7 @@ export default function move(gameState){
         return totalIndex
     }
 
-    if(gameState.you.health < 50){
+    if(gameState.you.health < foodLimit){
         let foodSpot = gameState.board.food[findClosestFood(gameState.board.food)]
         priorityMoves.right = (foodSpot.x > myHead.x) ? true : priorityMoves.right
         priorityMoves.left = (foodSpot.x < myHead.x) ? true : priorityMoves.left
@@ -146,7 +146,7 @@ export default function move(gameState){
     if (safeMoves.length == 0) {
         if(riskyOptions.length != 0){
             console.log(`MOVE ${gameState.turn}: RISKY TIME`)
-        return { move: riskyOptions[Math.floor(Math.random() * riskyOptions.length)] };
+            return { move: riskyOptions[Math.floor(Math.random() * riskyOptions.length)] };
         }
         console.log(`MOVE ${gameState.turn}: Death is EVERYWHERE`)
         return { move: moveSafety[Math.floor(Math.random() * moveSafety.length)] };
@@ -164,7 +164,7 @@ export default function move(gameState){
         console.log(`Priority FutureSense MOVE (2) ${gameState.turn}: ${nextPriorityMove2}`);
         return { move: nextPriorityMove2 };
     } else if (futureSenseMoves.length > 0) {
-        const bestMove = futureSenseMoves[Math.floor(Math.random() * futureSenseMoves.length)];
+        let bestMove = futureSenseMoves[Math.floor(Math.random() * futureSenseMoves.length)];
         console.log(`FutureSense MOVE ${gameState.turn}: ${bestMove}`);
         return { move: bestMove };
     }
@@ -182,15 +182,15 @@ export default function move(gameState){
 }
 // checks for dead ends
 function futureSense(move, gameState, depth) {
-    const newGameState = JSON.parse(JSON.stringify(gameState));
-
-    const newHead = { ...newGameState.you.body[0] };
+    let newGameState = JSON.parse(JSON.stringify(gameState));
+    let myBody = newGameState.you.body
+    const newHead = { ...myBody[0] };
     if (move == "up") newHead.y += 1;
     if (move == "down") newHead.y -= 1;
     if (move == "left") newHead.x -= 1;
     if (move == "right") newHead.x += 1;
 
-    newGameState.you.body.unshift(newHead);
+    myBody.unshift(newHead);
     newGameState.you.health -= 1;
     if (
         newHead.x < 0 || newHead.x >= newGameState.board.width ||
@@ -199,9 +199,9 @@ function futureSense(move, gameState, depth) {
         return false;
     } 
 
-    for (let i = 1; i < newGameState.you.body.length; i++) {
-        if (newHead.x == newGameState.you.body[i].x &&
-            newHead.y == newGameState.you.body[i].y) {
+    for (let i = 1; i < myBody.length; i++) {
+        if (newHead.x == myBody[i].x &&
+            newHead.y == myBody[i].y) {
             return false;
         }
     }
@@ -214,7 +214,7 @@ function futureSense(move, gameState, depth) {
             }
         }
     }
-    if (depth <= 0) {
+    if (depth <= 0) { // base case
         return true;
     }
     const nextMoves = ["up", "down", "left", "right"];
@@ -223,6 +223,5 @@ function futureSense(move, gameState, depth) {
             return true;
         }
     }
-
     return false;
 }
