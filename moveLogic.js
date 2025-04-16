@@ -1,4 +1,5 @@
 export default function move(gameState){
+    gameState.board.snakes.forEach(snake => console.log(snake.name));
     let moveSafety = {
         up: true,
         down: true,
@@ -17,7 +18,7 @@ export default function move(gameState){
         left: false,
         right: false
     };
-    let foodLimit = 20
+    let foodLimit = 66
     // We've included code to prevent your Battlesnake from moving backwards
     
     const myHead = gameState.you.body[0];
@@ -48,9 +49,24 @@ export default function move(gameState){
             moveSafety.left = (myHead.x  -1 == myBody[i].x && myHead.y == myBody[i].y) ? false : moveSafety.left
             moveSafety.up = (myHead.x == myBody[i].x  && myHead.y + 1== myBody[i].y ) ? false : moveSafety.up
             moveSafety.down = (myHead.x == myBody[i].x && myHead.y -1 == myBody[i].y) ? false : moveSafety.down
+
+            riskyMoves.right = (myHead.x + 1 == myBody[i].x  && myHead.y == myBody[i].y) ? false : riskyMoves.right
+            riskyMoves.left = (myHead.x  -1 == myBody[i].x && myHead.y == myBody[i].y) ? false : riskyMoves.left
+            riskyMoves.up = (myHead.x == myBody[i].x  && myHead.y + 1== myBody[i].y ) ? false : riskyMoves.up
+            riskyMoves.down = (myHead.x == myBody[i].x && myHead.y -1 == myBody[i].y) ? false : riskyMoves.down
         }
     }
+    function riskyPres() {
+        for(let i = 1; i < myBody.length - 1; i++){
+            riskyMoves.right = (myHead.x + 1 == myBody[i].x  && myHead.y == myBody[i].y) ? false : riskyMoves.right
+            riskyMoves.left = (myHead.x  -1 == myBody[i].x && myHead.y == myBody[i].y) ? false : riskyMoves.left
+            riskyMoves.up = (myHead.x == myBody[i].x  && myHead.y + 1== myBody[i].y ) ? false : riskyMoves.up
+            riskyMoves.down = (myHead.x == myBody[i].x && myHead.y -1 == myBody[i].y) ? false : riskyMoves.down
+        }
+    }
+    
     selfPreservation()
+    riskyPres()
     
     
     // TODO: Step 3 - Prevent your Battlesnake from colliding with other Battlesnakes
@@ -80,8 +96,8 @@ export default function move(gameState){
             let enemyMoves = [
                 { x: enemyHead.x + 1, y: enemyHead.y },
                 { x: enemyHead.x - 1, y: enemyHead.y },
-                { x: enemyHead.x,     y: enemyHead.y + 1 },
-                { x: enemyHead.x,     y: enemyHead.y - 1 },
+                { x: enemyHead.x, y: enemyHead.y + 1 },
+                { x: enemyHead.x, y: enemyHead.y - 1 },
             ];
             for (const move of enemyMoves) {
                 if (myHead.x + 1 === move.x && myHead.y === move.y) {
@@ -101,6 +117,23 @@ export default function move(gameState){
                     moveSafety.down = false;
                     riskyMoves.down = true
                 }
+            }
+            enemyDodging() // because I say the other snake could eat itself, and that is risky, so even if it says that I should not do it it does
+            selfPreservation()
+            riskyPres()
+        }
+        if(enemyLength < myLength){
+            let enemyMoves = [
+                { x: enemyHead.x + 1, y: enemyHead.y },
+                { x: enemyHead.x - 1, y: enemyHead.y },
+                { x: enemyHead.x, y: enemyHead.y + 1 },
+                { x: enemyHead.x, y: enemyHead.y - 1 },
+            ];
+            for (const move of enemyMoves) {
+                priorityMoves.right = (myHead.x + 1 == move.x && myHead.y == move.y) ? true : priorityMoves.right
+                priorityMoves.left = (myHead.x - 1 == move.x && myHead.y == move.y) ? true : priorityMoves.left
+                priorityMoves.up = (myHead.x == move.x && myHead.y + 1 == move.y) ? true : priorityMoves.up
+                priorityMoves.down = (myHead.x == move.x && myHead.y - 1 == move.y) ? true : priorityMoves.down
             }
             enemyDodging() // because I say the other snake could eat itself, and that is risky, so even if it says that I should not do it it does
             selfPreservation()
@@ -145,14 +178,15 @@ export default function move(gameState){
 
     if (safeMoves.length == 0) {
         if(riskyOptions.length != 0){
-            console.log(`MOVE ${gameState.turn}: RISKY TIME`)
-            return { move: riskyOptions[Math.floor(Math.random() * riskyOptions.length)] };
+            let thisMove = riskyOptions[Math.floor(Math.random() * riskyOptions.length)]
+            console.log(`MOVE ${gameState.turn}: RISKY TIME ${thisMove}` )
+            return { move: thisMove};
         }
         console.log(`MOVE ${gameState.turn}: Death is EVERYWHERE`)
         return { move: moveSafety[Math.floor(Math.random() * moveSafety.length)] };
     }
     
-    let futureSenseMoves = safeMoves.filter(move => futureSense(move, gameState, 5));
+    let futureSenseMoves = safeMoves.filter(move => futureSense(move, gameState, 8));
 
     let nextPriorityMove1 = priorityMovesFinal[0]; // only 2 options for food, its either up/down, or left/right
     let nextPriorityMove2 = priorityMovesFinal[1];
@@ -185,13 +219,14 @@ function futureSense(move, gameState, depth) {
     let newGameState = JSON.parse(JSON.stringify(gameState));
     let myBody = newGameState.you.body
     const newHead = { ...myBody[0] };
-    if (move == "up") newHead.y += 1;
-    if (move == "down") newHead.y -= 1;
-    if (move == "left") newHead.x -= 1;
-    if (move == "right") newHead.x += 1;
+    newHead.y = (move == "up") ? newHead.y + 1 : newHead.y
+    newHead.y = (move == "down") ? newHead.y - 1 : newHead.y
+    newHead.x = (move == "left") ? newHead.x - 1 : newHead.x
+    newHead.x = (move == "right") ? newHead.x + 1 : newHead.x
 
     myBody.unshift(newHead);
     newGameState.you.health -= 1;
+
     if (
         newHead.x < 0 || newHead.x >= newGameState.board.width ||
         newHead.y < 0 || newHead.y >= newGameState.board.height
@@ -208,8 +243,8 @@ function futureSense(move, gameState, depth) {
 
     for (let snake of newGameState.board.snakes) { // so much easier than a normal for loop
         if (snake.id == newGameState.you.id) continue; // once again ignore myself
-        for (let body of snake.body) { // for each snake (doesn't account for them moving yet)
-            if (newHead.x == body.x && newHead.y == body.y) {
+        for (let i = 0; i < snake.body.length; i++) {
+            if (newHead.x == snake.body[i].x && newHead.y == snake.body[i].y) {
                 return false;
             }
         }
@@ -225,3 +260,4 @@ function futureSense(move, gameState, depth) {
     }
     return false;
 }
+
