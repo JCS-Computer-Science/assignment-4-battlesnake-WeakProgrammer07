@@ -23,7 +23,7 @@ export default function move(gameState){
     let myHead = gameState.you.body[0];
     let myNeck = gameState.you.body[1];
 
-
+    let healthLimit = 100
 
     function safeBack(){
         moveSafety.left  = (myNeck.x < myHead.x) ? false : moveSafety.left;
@@ -141,6 +141,7 @@ export default function move(gameState){
             }
             enemyDodging()
             selfPreservation()
+            riskyPres()
         }
     }
     function getNextPosition(pos, dir) {
@@ -228,8 +229,15 @@ export default function move(gameState){
     
         return bestFood
     }
+    if(gameState.turn < 10){
+        healthLimit = 100
+    } else if(gameState.turn < 100){
+        healthLimit = 80
+    } else {
+        healthLimit = 40
+    }
     
-    if (gameState.you.health < 50) {
+    if (gameState.you.health < healthLimit) {
         let bestFood = findBestFood(myHead, gameState.board.food, gameState.board.snakes);
         
         priorityMoves.right = bestFood.x > myHead.x;
@@ -243,8 +251,14 @@ export default function move(gameState){
     
     if (safeMoves.length == 0) {
         for (let move of riskyOptions) {
-            if (futureSense(move, gameState, 5)) {
-                console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing risky but future-safe move: ${move}`);
+            if (futureSense(move, gameState, 10)) {
+                console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing risky but 10 future-safe move: ${move}`);
+                return { move };
+            } else if(futureSense(move, gameState, 5)){
+                console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing risky but 5 future-safe move: ${move}`);
+                return { move };
+            } else if(futureSense(move, gameState, 3)){
+                console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing risky but 3 future-safe move: ${move}`);
                 return { move };
             }
         }
@@ -257,8 +271,20 @@ export default function move(gameState){
         return { move: "up" };
     }
     
-    let futureSafeMoves = safeMoves.filter(move => futureSense(move, gameState, 10));
+    let futureSafeMoves = safeMoves.filter(move => futureSense(move, gameState, 15));
     if (futureSafeMoves.length == 0) {
+        for (let move of riskyOptions) {
+            if (futureSense(move, gameState, 10)) {
+                console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing risky but 10 future-safe move: ${move}`);
+                return { move };
+            } else if(futureSense(move, gameState, 5)){
+                console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing risky but 5 future-safe move: ${move}`);
+                return { move };
+            } else if(futureSense(move, gameState, 3)){
+                console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing risky but 3 future-safe move: ${move}`);
+                return { move };
+            }
+        }
         let chosenMove = safeMoves[Math.floor(Math.random() * safeMoves.length)];
         console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - No future-safe moves, using random safe move: ${chosenMove}`);
         return { move: chosenMove };
@@ -267,7 +293,7 @@ export default function move(gameState){
     futureSafeMoves.forEach(move => {
         moveScores[move] = 0;
         moveScores[move] += spaceScores[move] || 0;
-        moveScores[move] += priorityMoves[move] ? 10 : 0;
+        moveScores[move] += priorityMoves[move] ? 30 : 0;
     });
     let bestMove = null;
     let bestScore = 0
@@ -446,6 +472,5 @@ function futureSense(move, gameState, depth) {
             return true;
         }
     }
-    
     return false;
 }
