@@ -18,7 +18,7 @@ export default function move(gameState){
         left: false,
         right: false
     };
-    let spaceScores = { up: 0, down: 0, left: 0, right: 0 }  // Initialize here to avoid undefined issues
+    let spaceScores = { up: 0, down: 0, left: 0, right: 0 }
     
     let myHead = gameState.you.body[0];
     let myNeck = gameState.you.body[1];
@@ -167,14 +167,10 @@ export default function move(gameState){
                 spaceScores[dir] = 0;
                 return;
             }
-            
             let nextPos = getNextPosition(myHead, dir);
             let space = floodFill(nextPos, 0, new Set(visited));
-            
-            // Get exit analysis for this position
             let exitAnalysis = countExits(nextPos);
             
-            // Combine space score with exit quality scores
             spaceScores[dir] = space + 
                               (exitAnalysis.scores.up * 0.2) + 
                               (exitAnalysis.scores.down * 0.2) +
@@ -290,6 +286,12 @@ export default function move(gameState){
             } else if(futureSense(move, gameState, 3)){
                 console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing risky but 3 future-safe move: ${move}`);
                 return { move };
+            }else if(futureSense(move, gameState, 2)){
+                console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing risky but 2 future-safe move: ${move}`);
+                return { move };
+            }else if(futureSense(move, gameState, 1)){
+                console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing risky but 1 future-safe move: ${move}`);
+                return { move };
             }
         }
         let chosenMove = safeMoves[Math.floor(Math.random() * safeMoves.length)];
@@ -300,7 +302,7 @@ export default function move(gameState){
         futureSafeMoves.forEach(move => {
             moveScores[move] = 0;
             moveScores[move] += spaceScores[move] || 0;
-            moveScores[move] += priorityMoves[move] ? 40 : 0; 
+            moveScores[move] += priorityMoves[move] ? 35 : 0; 
 
         });
 
@@ -376,7 +378,7 @@ function countExits(pos) {
 
             if (distance === 1) {
                 if (snake.body.length >= gameState.you.body.length) {
-                    score -= 60;
+                    score -= 40;
                 } else {
                     score -= 20;
                 }
@@ -387,25 +389,19 @@ function countExits(pos) {
             }
         }
         
-        // 5. Consider space beyond this move
         let futureExits = 0;
         let futureDirections = ['up', 'down', 'left', 'right'];
         futureDirections.forEach(futureDir => {
             let futurePos = getNextPosition(nextPos, futureDir);
-            // Simple check - could be enhanced
             if (futurePos.x >= 0 && futurePos.x < gameState.board.width &&
                 futurePos.y >= 0 && futurePos.y < gameState.board.height) {
                 futureExits++;
             }
         });
-        
-        // Bonus for positions that lead to more options
+
         score += futureExits * 5;
-        
-        exitScores[dir] = Math.max(0, score); // Ensure score doesn't go negative
     });
     
-    // Return both individual direction scores and total count
     return {
         scores: exitScores,
         count: Object.values(exitScores).filter(score => score > 50).length
