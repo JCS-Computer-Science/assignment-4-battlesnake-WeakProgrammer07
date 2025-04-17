@@ -171,9 +171,16 @@ export default function move(gameState){
             let nextPos = getNextPosition(myHead, dir);
             let space = floodFill(nextPos, 0, new Set(visited));
             
-            // Bonus for spaces that have multiple exits
-            let exits = countExits(nextPos);
-            spaceScores[dir] = space + (exits * 5);
+            // Get exit analysis for this position
+            let exitAnalysis = countExits(nextPos);
+            
+            // Combine space score with exit quality scores
+            spaceScores[dir] = space + 
+                              (exitAnalysis.scores.up * 0.2) + 
+                              (exitAnalysis.scores.down * 0.2) +
+                              (exitAnalysis.scores.left * 0.2) + 
+                              (exitAnalysis.scores.right * 0.2) +
+                              (exitAnalysis.count * 10);  // Bonus for multiple good exits
         });
     }
     evaluateSpace()
@@ -229,7 +236,7 @@ export default function move(gameState){
     
         return bestFood
     }
-    if(gameState.turn < 10){
+    if(gameState.turn < 30){
         healthLimit = 100
     } else if(gameState.turn < 100){
         healthLimit = 80
@@ -290,25 +297,26 @@ export default function move(gameState){
         return { move: chosenMove };
     }
     let moveScores = {};
-    futureSafeMoves.forEach(move => {
-        moveScores[move] = 0;
-        moveScores[move] += spaceScores[move] || 0;
-        moveScores[move] += priorityMoves[move] ? 30 : 0;
-    });
-    let bestMove = null;
-    let bestScore = 0
+        futureSafeMoves.forEach(move => {
+            moveScores[move] = 0;
+            moveScores[move] += spaceScores[move] || 0;
+            moveScores[move] += priorityMoves[move] ? 40 : 0; 
 
-    for (let move in moveScores) {
-        if (moveScores[move] > bestScore) {
-            bestScore = moveScores[move];
-            bestMove = move;
+        });
+
+        let bestMove = null;
+        let bestScore = -Infinity;
+        for (let move in moveScores) {
+            if (moveScores[move] > bestScore) {
+                bestScore = moveScores[move];
+                bestMove = move;
+            }
         }
-    }
     
     console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing best scored move: ${bestMove} (score: ${moveScores[bestMove]})`);
     return { move: bestMove };
 
-    // Updated floodFill and countExits functions with proper scope
+    //  floodFill and countExits functions
     function floodFill(pos, depth, visited) {
         let key = `${pos.x},${pos.y}`;
         if (visited.has(key) || depth > 15) return 0;
@@ -339,35 +347,70 @@ export default function move(gameState){
         return totalSpace;
     }
 
-    function countExits(pos) {
-        let exits = 0;
-        let directions = ['up', 'down', 'left', 'right'];
-        
-        directions.forEach(dir => {
-            let nextPos = getNextPosition(pos, dir);
-            
-            if (nextPos.x < 0 || nextPos.x >= gameState.board.width || nextPos.y < 0 || nextPos.y >= gameState.board.height) {
-                return;
-            }
-            
-            let occupied = false;
-            for (let snake of gameState.board.snakes) {
-                for (let body of snake.body) {
-                    if (nextPos.x == body.x && nextPos.y == body.y) {
-                        occupied = true;
-                        break;
-                    }
+function countExits(pos) {
+    let exitScores = { up: 0, down: 0, left: 0, right: 0 };
+    let directions = ['up', 'down', 'left', 'right'];
+    
+    directions.forEach(dir => {
+        let nextPos = getNextPosition(pos, dir);
+        if (nextPos.x < 0 || nextPos.x >= gameState.board.width || 
+            nextPos.y < 0 || nextPos.y >= gameState.board.height) {
+            exitScores[dir] = 0;
+            return;
+        }
+
+        for (let snake of gameState.board.snakes) {
+            for (let body of snake.body) {
+                if (nextPos.x === body.x && nextPos.y === body.y) {
+                    exitScores[dir] = 0;
+                    return;
                 }
-                if (occupied) break;
             }
+        }
+        let score = 100;
+        for (let snake of gameState.board.snakes) {
+            if (snake.id === gameState.you.id) continue;
             
-            if (!occupied){
-                exits++;
+            let enemyHead = snake.body[0];
+            let distance = Math.abs(enemyHead.x - nextPos.x) + Math.abs(enemyHead.y - nextPos.y);
+
+            if (distance === 1) {
+                if (snake.body.length >= gameState.you.body.length) {
+                    score -= 60;
+                } else {
+                    score -= 20;
+                }
+            } 
+
+            else if (distance === 2) {
+                score -= 10;
+            }
+        }
+        
+        // 5. Consider space beyond this move
+        let futureExits = 0;
+        let futureDirections = ['up', 'down', 'left', 'right'];
+        futureDirections.forEach(futureDir => {
+            let futurePos = getNextPosition(nextPos, futureDir);
+            // Simple check - could be enhanced
+            if (futurePos.x >= 0 && futurePos.x < gameState.board.width &&
+                futurePos.y >= 0 && futurePos.y < gameState.board.height) {
+                futureExits++;
             }
         });
         
-        return exits;
-    }
+        // Bonus for positions that lead to more options
+        score += futureExits * 5;
+        
+        exitScores[dir] = Math.max(0, score); // Ensure score doesn't go negative
+    });
+    
+    // Return both individual direction scores and total count
+    return {
+        scores: exitScores,
+        count: Object.values(exitScores).filter(score => score > 50).length
+    };
+}
 }
 
 // checking for dead ends and enemy movement
@@ -465,7 +508,6 @@ function futureSense(move, gameState, depth) {
             }
         }
     }
-
     let nextMoves = ["up", "down", "left", "right"];
     for (let nextMove of nextMoves) {
         if (futureSense(nextMove, newGameState, depth - 1)) {
