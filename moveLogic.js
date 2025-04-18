@@ -258,7 +258,7 @@ function detectEnemyNecks() {
         return bestFood
     }
     if(gameState.turn < 10 || myLength < 6){
-        healthLimit = 100
+        healthLimit = 97
     } else if(gameState.turn < 50 || myLength < 10){
         healthLimit = 80
     } else {
