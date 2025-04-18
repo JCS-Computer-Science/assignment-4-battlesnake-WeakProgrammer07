@@ -29,7 +29,7 @@ export default function move(gameState){
         moveSafety.left  = (myNeck.x < myHead.x) ? false : moveSafety.left;
         moveSafety.right  = (myNeck.x > myHead.x) ? false : moveSafety.right;
         moveSafety.down  = (myNeck.y < myHead.y) ? false : moveSafety.down;
-        moveSafety.up  = (myNeck.y > myHead.y) ? false : moveSafety.up;
+        moveSafety.up = (myNeck.y > myHead.y) ? false : moveSafety.up;
     }
     safeBack()
     
@@ -262,7 +262,7 @@ function detectEnemyNecks() {
     } else if(gameState.turn < 50){
         healthLimit = 80
     } else {
-        healthLimit = 50
+        healthLimit = 60
     }
     
     if (gameState.you.health < healthLimit) {
@@ -299,7 +299,7 @@ function detectEnemyNecks() {
         return { move: "up" };
     }
     
-    let futureSafeMoves = safeMoves.filter(move => futureSense(move, gameState, 15));
+    let futureSafeMoves = safeMoves.filter(move => futureSense(move, gameState, 20));
     if (futureSafeMoves.length == 0) {
         for (let move of riskyOptions) {
             if (futureSense(move, gameState, 10)) {
@@ -327,7 +327,7 @@ function detectEnemyNecks() {
     futureSafeMoves.forEach(move => {
         moveScores[move] = 0;
         moveScores[move] += spaceScores[move] * 1.5;
-        moveScores[move] += priorityMoves[move] ? 35 : 0;
+        moveScores[move] += priorityMoves[move] ? 50 : 0;
 
         let nextPos = getNextPosition(myHead, move);
         let centerX = Math.floor(gameState.board.width / 2);
@@ -342,8 +342,32 @@ function detectEnemyNecks() {
             let nextMoves = countExits(nextPos, gameState.you.body.length).count;
             moveScores[move] += nextMoves * 5;
         }
+        let myTail = myBody[myBody.length - 1];
+        let tailPriorityMoves = [];
+        
+        if (myHead.x < myTail.x && moveSafety.right) {
+            tailPriorityMoves.push("right");
+        }
+        if (myHead.x > myTail.x && moveSafety.left)  {
+            tailPriorityMoves.push("left");
+        }
+        if (myHead.y < myTail.y && moveSafety.up)    {
+            tailPriorityMoves.push("up");
+        }
+        if (myHead.y > myTail.y && moveSafety.down)  {
+            tailPriorityMoves.push("down");
 
-        if (gameState.you.health > 40 && (myLength < 12)) {
+        }
+
+        const tailBias = Math.max(0, myBody.length - 5) * 0.2;
+        
+        for (const move of tailPriorityMoves) {
+            if (moveScores[move] !== undefined) {
+                moveScores[move] += tailBias;
+            }
+        }
+
+        if (gameState.you.health > 40 && (myLength < 15)) {
             for (let snake of gameState.board.snakes) {
                 if (snake.id == gameState.you.id) continue;
                 
@@ -365,6 +389,17 @@ function detectEnemyNecks() {
             if (moveScores[move] > bestScore) {
                 bestScore = moveScores[move];
                 bestMove = move;
+            }
+        }
+
+        if (!moveSafety[bestMove]) {
+            console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Selected best move ${bestMove} is actually unsafe, picking another safe move`);
+            // Find a different safe move instead
+            for (let move of safeMoves) {
+                if (move !== bestMove) {
+                    console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Using alternate safe move: ${move}`);
+                    return { move };
+                }
             }
         }
     
