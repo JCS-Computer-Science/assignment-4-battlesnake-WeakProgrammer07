@@ -33,12 +33,12 @@ export default function move(gameState){
     }
     safeBack()
     
-    function bounds(){
-        moveSafety.left = (myHead.x == 0) ? false : moveSafety.left
-        moveSafety.right = (myHead.x == (gameState.board.width) -1) ? false : moveSafety.right
-        moveSafety.down = (myHead.y == 0) ? false : moveSafety.down
-        moveSafety.up = (myHead.y == (gameState.board.height) -1) ? false : moveSafety.up
-    }
+    function bounds() {
+        moveSafety.left = myHead.x == 0 ? false : moveSafety.left;
+        moveSafety.right = myHead.x == gameState.board.width - 1 ? false : moveSafety.right;
+        moveSafety.down = myHead.y == 0 ? false : moveSafety.down;
+        moveSafety.up = myHead.y == gameState.board.height - 1 ? false : moveSafety.up;
+      }
     bounds()
     
     let myBody = gameState.you.body
@@ -257,12 +257,12 @@ function detectEnemyNecks() {
     
         return bestFood
     }
-    if(gameState.turn < 10 || myLength < 6){
-        healthLimit = 97
-    } else if(gameState.turn < 50 || myLength < 10){
-        healthLimit = 80
+    if(gameState.turn < 10 || myLength < 5){
+        healthLimit = 96
+    } else if(gameState.turn < 50 || myLength < 7){
+        healthLimit = 70
     } else {
-        healthLimit = 60
+        healthLimit = 40
     }
     
     if (gameState.you.health < healthLimit) {
@@ -393,15 +393,22 @@ function detectEnemyNecks() {
         }
 
         if (!moveSafety[bestMove]) {
-            console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Selected best move ${bestMove} is actually unsafe, picking another safe move`);
-            // Find a different safe move instead
+            console.log(
+              `Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Selected best move ${bestMove} is actually unsafe, picking another safe move`
+            );
             for (let move of safeMoves) {
-                if (move !== bestMove) {
-                    console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Using alternate safe move: ${move}`);
-                    return { move };
-                }
+              if (move !== bestMove) {
+                console.log(
+                  `Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Using alternate safe move: ${move}`
+                );
+                return { move };
+              }
             }
-        }
+            if (safeMoves.length > 0) {
+              return { move: safeMoves[0] };
+            }
+            return { move: "up" };
+          }
     
     console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing best scored move: ${bestMove} (score: ${moveScores[bestMove]})`);
     return { move: bestMove };
@@ -420,9 +427,14 @@ function detectEnemyNecks() {
     
         // Check if the tile is occupied by any body
         for (let snake of gameState.board.snakes) {
-            for (let segment of snake.body) {
-                if (segment.x === pos.x && segment.y === pos.y) return 0;
+            let h = 1
+            if(snake.health == 100){
+                h = 0
             }
+            for (let i = 0; i < snake.body.length - h; i++) {
+                const segment = snake.body[i];
+                if (segment.x == pos.x && segment.y == pos.y) return 0;
+              }
         }
     
         // Avoid tiles enemy heads might move into
