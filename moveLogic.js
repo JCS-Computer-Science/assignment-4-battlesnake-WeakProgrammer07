@@ -95,8 +95,12 @@ function detectEnemyNecks() {
         
         function enemyDodging() {
             let enemyNecks = detectEnemyNecks();
+            let h = 1
+            if(enemySnake.health == 100){
+                h = 0
+            }
             
-            for (let i = 0; i < enemySnake.body.length; i++) {
+            for (let i = 0; i < enemySnake.body.length - h; i++) {
                 let enemyBody = enemySnake.body[i];
                 moveSafety.right = (myHead.x + 1 == enemyBody.x && myHead.y == enemyBody.y) ? false : moveSafety.right
                 moveSafety.left = (myHead.x - 1 == enemyBody.x && myHead.y == enemyBody.y) ? false : moveSafety.left
@@ -215,7 +219,7 @@ function detectEnemyNecks() {
         let enemyHead = snake.body[0];
         let enemyLength = snake.body.length;
         
-        if (myLength > enemyLength && myHealth > 30) {
+        if (myLength > enemyLength && myHealth > 60) {
             let distance = Math.abs(myHead.x - enemyHead.x) + Math.abs(myHead.y - enemyHead.y);
             
             if (distance <= 3) {
@@ -262,7 +266,7 @@ function detectEnemyNecks() {
     } else if(gameState.turn < 50 || myLength < 7){
         healthLimit = 70
     } else {
-        healthLimit = 40
+        healthLimit = 50
     }
     
     if (gameState.you.health < healthLimit) {
@@ -281,13 +285,13 @@ function detectEnemyNecks() {
         for (let move of riskyOptions) {
             if (futureSense(move, gameState, 10)) {
                 console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing risky but 10 future-safe move: ${move}`);
-                return { move };
+                return {  move: `${move}`  };
             } else if(futureSense(move, gameState, 5)){
                 console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing risky but 5 future-safe move: ${move}`);
-                return { move };
+                return {  move: `${move}`  };
             } else if(futureSense(move, gameState, 3)){
                 console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing risky but 3 future-safe move: ${move}`);
-                return { move };
+                return {  move: `${move}`  };
             }
         }
         if (riskyOptions.length > 0) {
@@ -304,41 +308,46 @@ function detectEnemyNecks() {
         for (let move of riskyOptions) {
             if (futureSense(move, gameState, 10)) {
                 console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing risky but 10 future-safe move: ${move}`);
-                return { move };
+                return {  move: `${move}`  };
             } else if(futureSense(move, gameState, 5)){
                 console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing risky but 5 future-safe move: ${move}`);
-                return { move };
+                return {  move: `${move}`  };
             } else if(futureSense(move, gameState, 3)){
                 console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing risky but 3 future-safe move: ${move}`);
-                return { move };
+                return {  move: `${move}`  };
             }else if(futureSense(move, gameState, 2)){
                 console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing risky but 2 future-safe move: ${move}`);
-                return { move };
+                return {  move: `${move}`  };
             }else if(futureSense(move, gameState, 1)){
                 console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing risky but 1 future-safe move: ${move}`);
-                return { move };
+                return {  move: `${move}`  };
             }
         }
         let chosenMove = safeMoves[Math.floor(Math.random() * safeMoves.length)];
         console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - No future-safe moves, using random safe move: ${chosenMove}`);
-        return { move: chosenMove };
+        return { move: `${chosenMove}` };
     }
     let moveScores = {};
     futureSafeMoves.forEach(move => {
         moveScores[move] = 0;
         moveScores[move] += spaceScores[move] * 1.5;
-        moveScores[move] += priorityMoves[move] ? 50 : 0;
+        if(myHealth < 30){
+            moveScores[move] += priorityMoves[move] ? 400 : 0;
+        } else {
+            moveScores[move] += priorityMoves[move] ? 70 : 0;
+        }
+        
 
         let nextPos = getNextPosition(myHead, move);
         let centerX = Math.floor(gameState.board.width / 2);
         let centerY = Math.floor(gameState.board.height / 2);
         let distanceToCenter = Math.abs(nextPos.x - centerX) + Math.abs(nextPos.y - centerY);
         
-        if (gameState.turn < 50) {
+        if (gameState.turn < 100) {
             moveScores[move] += (10 - distanceToCenter) * 0.5;
         }
 
-        if (gameState.you.health > 50) {
+        if (gameState.you.health > 40) {
             let nextMoves = countExits(nextPos, gameState.you.body.length).count;
             moveScores[move] += nextMoves * 5;
         }
@@ -356,10 +365,8 @@ function detectEnemyNecks() {
         }
         if (myHead.y > myTail.y && moveSafety.down)  {
             tailPriorityMoves.push("down");
-
         }
-
-        const tailBias = Math.max(0, myBody.length - 5) * 0.2;
+        const tailBias = Math.max(0, myBody.length - 2) * 0.2;
         
         for (const move of tailPriorityMoves) {
             if (moveScores[move] !== undefined) {
@@ -367,7 +374,7 @@ function detectEnemyNecks() {
             }
         }
 
-        if (gameState.you.health > 40 && (myLength < 15)) {
+        if (gameState.you.health > 40) {
             for (let snake of gameState.board.snakes) {
                 if (snake.id == gameState.you.id) continue;
                 
@@ -401,11 +408,11 @@ function detectEnemyNecks() {
                 console.log(
                   `Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Using alternate safe move: ${move}`
                 );
-                return { move };
+                return {  move: `${move}`  };
               }
             }
             if (safeMoves.length > 0) {
-              return { move: safeMoves[0] };
+              return { move: `${safeMoves[0]}` };
             }
             return { move: "up" };
           }
@@ -427,11 +434,7 @@ function detectEnemyNecks() {
     
         // Check if the tile is occupied by any body
         for (let snake of gameState.board.snakes) {
-            let h = 1
-            if(snake.health == 100){
-                h = 0
-            }
-            for (let i = 0; i < snake.body.length - h; i++) {
+            for (let i = 0; i < snake.body.length - 1; i++) {
                 const segment = snake.body[i];
                 if (segment.x == pos.x && segment.y == pos.y) return 0;
               }
