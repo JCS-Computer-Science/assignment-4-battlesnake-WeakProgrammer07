@@ -374,7 +374,7 @@ function detectEnemyNecks() {
             }
         }
 
-        if (gameState.you.health > 40) {
+        if (gameState.you.health > 50) {
             for (let snake of gameState.board.snakes) {
                 if (snake.id == gameState.you.id) continue;
                 
@@ -384,6 +384,21 @@ function detectEnemyNecks() {
                     let newDistance = Math.abs(nextPos.x - enemyHead.x) + Math.abs(nextPos.y - enemyHead.y);
                     if (newDistance < currentDistance) {
                         moveScores[move] += 10;
+                    }
+                }
+            }
+        }
+
+        if (gameState.you.health < 100) {
+            for (let snake of gameState.board.snakes) {
+                if (snake.id == gameState.you.id) continue;
+                
+                if (snake.body.length > gameState.you.body.length) {
+                    let enemyHead = snake.body[0];
+                    let currentDistance = Math.abs(myHead.x - enemyHead.x) + Math.abs(myHead.y - enemyHead.y);
+                    let newDistance = Math.abs(nextPos.x - enemyHead.x) + Math.abs(nextPos.y - enemyHead.y);
+                    if (newDistance < currentDistance) {
+                        moveScores[move] -= 5;
                     }
                 }
             }
