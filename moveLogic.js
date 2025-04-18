@@ -76,18 +76,43 @@ export default function move(gameState){
     
     selfPreservation()
     riskyPres()
+// Add a new function to detect positions right behind enemy heads
+function detectEnemyNecks() {
+    let enemyNecks = [];
+    
+    for (let snake of gameState.board.snakes) {
+        if (snake.id === gameState.you.id) continue;
+            let enemyNeck = snake.body[1];
+            enemyNecks.push({ x: enemyNeck.x, y: enemyNeck.y });
+    }
+    return enemyNecks;
+}
     
     for (let j = 0; j < gameState.board.snakes.length; j++) {
         let enemySnake = gameState.board.snakes[j];
         if (enemySnake.id == gameState.you.id) continue;
         
-        function enemyDodging(){
+        
+        function enemyDodging() {
+            let enemyNecks = detectEnemyNecks();
+            
             for (let i = 0; i < enemySnake.body.length; i++) {
                 let enemyBody = enemySnake.body[i];
                 moveSafety.right = (myHead.x + 1 == enemyBody.x && myHead.y == enemyBody.y) ? false : moveSafety.right
                 moveSafety.left = (myHead.x - 1 == enemyBody.x && myHead.y == enemyBody.y) ? false : moveSafety.left
                 moveSafety.up = (myHead.x == enemyBody.x && myHead.y + 1 == enemyBody.y) ? false : moveSafety.up
                 moveSafety.down = (myHead.x == enemyBody.x && myHead.y - 1 == enemyBody.y) ? false : moveSafety.down
+            }
+            
+            for (let neck of enemyNecks) {
+                moveSafety.right = (myHead.x + 1 == neck.x && myHead.y == neck.y) ? false : moveSafety.right
+                moveSafety.left = (myHead.x - 1 == neck.x && myHead.y == neck.y) ? false : moveSafety.left
+                moveSafety.up = (myHead.x == neck.x && myHead.y + 1 == neck.y) ? false : moveSafety.up
+                moveSafety.down = (myHead.x == neck.x && myHead.y - 1 == neck.y) ? false : moveSafety.down
+                riskyMoves.right = (myHead.x + 1 == neck.x && myHead.y == neck.y) ? false : riskyMoves.right
+                riskyMoves.left = (myHead.x - 1 == neck.x && myHead.y == neck.y) ? false : riskyMoves.left
+                riskyMoves.up = (myHead.x == neck.x && myHead.y + 1 == neck.y) ? false : riskyMoves.up
+                riskyMoves.down = (myHead.x == neck.x && myHead.y - 1 == neck.y) ? false : riskyMoves.down
             }
         }
         enemyDodging()
@@ -232,12 +257,12 @@ export default function move(gameState){
     
         return bestFood
     }
-    if(gameState.turn < 30){
+    if(gameState.turn < 10){
         healthLimit = 100
-    } else if(gameState.turn < 100){
+    } else if(gameState.turn < 50){
         healthLimit = 80
     } else {
-        healthLimit = 40
+        healthLimit = 50
     }
     
     if (gameState.you.health < healthLimit) {
@@ -299,15 +324,43 @@ export default function move(gameState){
         return { move: chosenMove };
     }
     let moveScores = {};
-        futureSafeMoves.forEach(move => {
-            moveScores[move] = 0;
-            moveScores[move] += spaceScores[move] || 0;
-            moveScores[move] += priorityMoves[move] ? 35 : 0; 
+    futureSafeMoves.forEach(move => {
+        moveScores[move] = 0;
+        moveScores[move] += spaceScores[move] * 1.5;
+        moveScores[move] += priorityMoves[move] ? 35 : 0;
 
-        });
+        let nextPos = getNextPosition(myHead, move);
+        let centerX = Math.floor(gameState.board.width / 2);
+        let centerY = Math.floor(gameState.board.height / 2);
+        let distanceToCenter = Math.abs(nextPos.x - centerX) + Math.abs(nextPos.y - centerY);
+        
+        if (gameState.turn < 50) {
+            moveScores[move] += (10 - distanceToCenter) * 0.5;
+        }
+
+        if (gameState.you.health > 50) {
+            let nextMoves = countExits(nextPos, gameState.you.body.length).count;
+            moveScores[move] += nextMoves * 5;
+        }
+
+        if (gameState.you.health > 40 && (myLength < 12)) {
+            for (let snake of gameState.board.snakes) {
+                if (snake.id == gameState.you.id) continue;
+                
+                if (snake.body.length < gameState.you.body.length) {
+                    let enemyHead = snake.body[0];
+                    let currentDistance = Math.abs(myHead.x - enemyHead.x) + Math.abs(myHead.y - enemyHead.y);
+                    let newDistance = Math.abs(nextPos.x - enemyHead.x) + Math.abs(nextPos.y - enemyHead.y);
+                    if (newDistance < currentDistance) {
+                        moveScores[move] += 10;
+                    }
+                }
+            }
+        }
+    });
 
         let bestMove = null;
-        let bestScore = -Infinity;
+        let bestScore = -100000;
         for (let move in moveScores) {
             if (moveScores[move] > bestScore) {
                 bestScore = moveScores[move];
@@ -319,94 +372,125 @@ export default function move(gameState){
     return { move: bestMove };
 
     //  floodFill and countExits functions
-    function floodFill(pos, depth, visited) {
-        let key = `${pos.x},${pos.y}`;
-        if (visited.has(key) || depth > 15) return 0;
-        
+    function floodFill(pos, depth, visited, limit = 100) {
+        const key = `${pos.x},${pos.y}`;
+        if (visited.has(key) || depth > limit) return 0;
         visited.add(key);
-        
-        if (pos.x < 0 || pos.x >= gameState.board.width || pos.y < 0 || pos.y >= gameState.board.height) {
-            return 0;
-        }
-        
-        // Check if position is occupied by a snake body
+    
+        // Out of bounds
+        if (
+            pos.x < 0 || pos.x >= gameState.board.width ||
+            pos.y < 0 || pos.y >= gameState.board.height
+        ) return 0;
+    
+        // Check if the tile is occupied by any body
         for (let snake of gameState.board.snakes) {
-            for (let body of snake.body) {
-                if (pos.x == body.x && pos.y == body.y) {
-                    return 0;
-                }
+            for (let segment of snake.body) {
+                if (segment.x === pos.x && segment.y === pos.y) return 0;
             }
         }
-        
-        let totalSpace = 1;
-        let directions = ['up', 'down', 'left', 'right'];
-        
-        directions.forEach(dir => {
-            let nextPos = getNextPosition(pos, dir);
-            totalSpace += floodFill(nextPos, depth + 1, visited);
-        });
-        
-        return totalSpace;
+    
+        // Avoid tiles enemy heads might move into
+        const dangerousTiles = getEnemyHeadNextMoves();
+        for (let danger of dangerousTiles) {
+            if (danger.x === pos.x && danger.y === pos.y) return 0;
+        }
+    
+        let space = 1;
+        for (let dx of [-1, 1]) {
+            space += floodFill({ x: pos.x + dx, y: pos.y }, depth + 1, visited, limit);
+        }
+        for (let dy of [-1, 1]) {
+            space += floodFill({ x: pos.x, y: pos.y + dy }, depth + 1, visited, limit);
+        }
+    
+        return space;
     }
 
-function countExits(pos) {
-    let exitScores = { up: 0, down: 0, left: 0, right: 0 };
-    let directions = ['up', 'down', 'left', 'right'];
+    function countExits(pos, myLength) {
+        const directions = {
+            up: { x: pos.x, y: pos.y + 1 },
+            down: { x: pos.x, y: pos.y - 1 },
+            left: { x: pos.x - 1, y: pos.y },
+            right: { x: pos.x + 1, y: pos.y }
+        };
     
-    directions.forEach(dir => {
-        let nextPos = getNextPosition(pos, dir);
-        if (nextPos.x < 0 || nextPos.x >= gameState.board.width || 
-            nextPos.y < 0 || nextPos.y >= gameState.board.height) {
-            exitScores[dir] = 0;
-            return;
+        const enemyHeadMoves = getEnemyHeadNextMoves(myLength);
+        let scores = {};
+        let count = 0;
+    
+        for (let dir in directions) {
+            const p = directions[dir];
+            let isSafe = true;
+    
+            // Check board boundaries
+            if (
+                p.x < 0 || p.x >= gameState.board.width ||
+                p.y < 0 || p.y >= gameState.board.height
+            ) {
+                isSafe = false;
+            }
+    
+            // Check bodies
+            if (isSafe) {
+                for (let snake of gameState.board.snakes) {
+                    for (let segment of snake.body) {
+                        if (segment.x === p.x && segment.y === p.y) {
+                            isSafe = false;
+                            break;
+                        }
+                    }
+                    if (!isSafe) break;
+                }
+            }
+    
+            // Check if an enemy might move there next
+            if (isSafe) {
+                for (let danger of enemyHeadMoves) {
+                    if (danger.x === p.x && danger.y === p.y) {
+                        isSafe = false;
+                        break;
+                    }
+                }
+            }
+    
+            scores[dir] = isSafe ? 1 : 0;
+            if (isSafe) count += 1;
         }
+    
+        return { scores, count };
+    }
 
+    function getEnemyHeadNextMoves(myLength = 0) {
+        const dangerTiles = [];
+    
         for (let snake of gameState.board.snakes) {
-            for (let body of snake.body) {
-                if (nextPos.x === body.x && nextPos.y === body.y) {
-                    exitScores[dir] = 0;
-                    return;
+            if (snake.id === gameState.you.id) continue; // Skip yourself
+    
+            const isDangerous = snake.length >= myLength;
+            if (!isDangerous) continue;
+    
+            const head = snake.head;
+            const possibleMoves = [
+                { x: head.x + 1, y: head.y },
+                { x: head.x - 1, y: head.y },
+                { x: head.x, y: head.y + 1 },
+                { x: head.x, y: head.y - 1 }
+            ];
+    
+            for (let move of possibleMoves) {
+                // Ignore out-of-bounds
+                if (
+                    move.x >= 0 && move.x < gameState.board.width &&
+                    move.y >= 0 && move.y < gameState.board.height
+                ) {
+                    dangerTiles.push(move);
                 }
             }
         }
-        let score = 100;
-        for (let snake of gameState.board.snakes) {
-            if (snake.id === gameState.you.id) continue;
-            
-            let enemyHead = snake.body[0];
-            let distance = Math.abs(enemyHead.x - nextPos.x) + Math.abs(enemyHead.y - nextPos.y);
-
-            if (distance === 1) {
-                if (snake.body.length >= gameState.you.body.length) {
-                    score -= 40;
-                } else {
-                    score -= 20;
-                }
-            } 
-
-            else if (distance === 2) {
-                score -= 10;
-            }
-        }
-        
-        let futureExits = 0;
-        let futureDirections = ['up', 'down', 'left', 'right'];
-        futureDirections.forEach(futureDir => {
-            let futurePos = getNextPosition(nextPos, futureDir);
-            if (futurePos.x >= 0 && futurePos.x < gameState.board.width &&
-                futurePos.y >= 0 && futurePos.y < gameState.board.height) {
-                futureExits++;
-            }
-        });
-
-        score += futureExits * 5;
-    });
     
-    return {
-        scores: exitScores,
-        count: Object.values(exitScores).filter(score => score > 50).length
-    };
-}
+        return dangerTiles;
+    }
 }
 
 // checking for dead ends and enemy movement
