@@ -234,42 +234,26 @@ function detectEnemyNecks() {
         }
     }
     
-    function findBestFood(snakeHead, foodLocations, allSnakes) {
+    function findBestFood(snakeHead, foodLocations) {
         let bestFood = null;
-        let minDistance = 1000;
-        let amIClosest = false;
+        let minDistance = 100000;
     
         for (let food of foodLocations) {
-            let myDistance = Math.abs(snakeHead.x - food.x) + Math.abs(snakeHead.y - food.y);
-        
-            let isClosest = true;
-            for (let snake of allSnakes) {
-                if (snake.id == gameState.you.id) continue;
-                
-                let enemyDistance = Math.abs(snake.body[0].x - food.x) + Math.abs(snake.body[0].y - food.y);
-                if (enemyDistance < myDistance) {
-                    isClosest = false;
-                    break;
-                }
-            }
-    
-            if (isClosest || (!amIClosest && myDistance < minDistance)) {
-                if (isClosest) {
-                    amIClosest = true;
-                }
-                minDistance = myDistance;
+            let distance = Math.abs(snakeHead.x - food.x) + Math.abs(snakeHead.y - food.y);
+            if (distance < minDistance) {
+                minDistance = distance;
                 bestFood = food;
             }
         }
     
-        return bestFood
+        return bestFood;
     }
-    if(gameState.turn < 10 || myLength < 5){
-        healthLimit = 96
-    } else if(gameState.turn < 50 || myLength < 7){
+    if(gameState.turn < 30 || myLength < 5){
+        healthLimit = 100
+    } else if(gameState.turn < 60){
         healthLimit = 70
     } else {
-        healthLimit = 50
+        healthLimit = 40
     }
     
     if (gameState.you.health < healthLimit) {
@@ -290,8 +274,11 @@ function detectEnemyNecks() {
         
         moveScores[move] = 0;
         moveScores[move] += spaceScores[move] * 1.5;
-        if(myHealth < 50){
-            moveScores[move] += priorityMoves[move] ? 500 : 0;
+        if(myHealth < healthLimit){
+            moveScores[move] += priorityMoves[move] ? 150 : 0;
+            if (myHealth < 30){
+                moveScores[move] += priorityMoves[move] ? 700 : 0;
+            }
         } else {
             moveScores[move] += priorityMoves[move] ? 70 : 0;
         }
@@ -302,8 +289,8 @@ function detectEnemyNecks() {
         let centerY = Math.floor(gameState.board.height / 2);
         let distanceToCenter = Math.abs(nextPos.x - centerX) + Math.abs(nextPos.y - centerY);
         
-        if (gameState.turn < 100) {
-            moveScores[move] += (10 - distanceToCenter) * 0.5;
+        if (gameState.turn < 150) {
+            moveScores[move] += (50 - distanceToCenter)
         }
 
         if (gameState.you.health > 40) {
@@ -325,12 +312,12 @@ function detectEnemyNecks() {
         if (myHead.y > myTail.y && moveSafety.down)  {
             tailPriorityMoves.push("down");
         }
-        const tailBias = Math.max(0, myBody.length - 1) * 0.6;
+        const tailBias = Math.max(0, myBody.length - 1);
         
         for (const move of tailPriorityMoves) {
             if (moveScores[move] !== undefined) {
-                if(myLength > 13){
-                    moveScores[move] = moveScores[move] + (tailBias * 5);
+                if(myLength > 5){
+                    moveScores[move] = moveScores[move] + (tailBias * 10);
                 } else {
                     moveScores[move] += tailBias;
                 }
@@ -370,7 +357,7 @@ function detectEnemyNecks() {
     });
             let bestMove = null;
             let bestScore = -100000;
-            let futureSafeMovesFinal = safeMoves.filter(move => futureSense(move, gameState, 12));
+            let futureSafeMovesFinal = safeMoves.filter(move => futureSense(move, gameState, 13));
             if (futureSafeMovesFinal.length > 0) {
                 futureSafeMovesFinal = futureSafeMovesFinal.filter(move => isValidMove(gameState, move) && moveSafety[move]);
                 for (let move of futureSafeMovesFinal) {
@@ -384,7 +371,7 @@ function detectEnemyNecks() {
                     return { move: bestMove };
                 }
             }
-            for (let depth of [10, 5, 3, 2, 1]) {
+            for (let depth of [10, 7, 5,4, 3]) {
                 let bestMoveAtDepth = null;
                 let bestScoreAtDepth = -100000;
                 let validMovesAtDepth = [];
@@ -415,7 +402,7 @@ function detectEnemyNecks() {
                 }
             }
 
-            for (let depth of [10, 5, 3, 2, 1]) {
+            for (let depth of [10, 5, 3, 2]) {
                 for (let move of riskyOptions) {
                     if (futureSense(move, gameState, depth)) {
                         console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing risky move with ${depth} future-sense: ${move}`);
