@@ -8,11 +8,11 @@ export default function move(gameState){
         left: true,
         right: true
     };
-    let priorityMoves = {
-        up: false,
-        down: false,
-        left: false,
-        right: false
+    let priorityMoves = { 
+        up: false, 
+        down: false, 
+        left: false, 
+        right: false 
     }
     let riskyMoves = {
         up: false,
@@ -225,7 +225,7 @@ function detectEnemyNecks() {
         if (myLength > enemyLength && myHealth > 60) {
             let distance = Math.abs(myHead.x - enemyHead.x) + Math.abs(myHead.y - enemyHead.y);
             
-            if (distance <= 3) {
+            if (distance <= 2) {
                 priorityMoves.right = enemyHead.x > myHead.x || priorityMoves.right;
                 priorityMoves.left = enemyHead.x < myHead.x || priorityMoves.left;
                 priorityMoves.up = enemyHead.y > myHead.y || priorityMoves.up;
@@ -256,15 +256,16 @@ function detectEnemyNecks() {
         healthLimit = 40
     }
     
-    if (gameState.you.health < healthLimit) {
-        let bestFood = findBestFood(myHead, gameState.board.food, gameState.board.snakes);
-        
-        priorityMoves.right = bestFood.x > myHead.x;
-        priorityMoves.left = bestFood.x < myHead.x;
-        priorityMoves.up = bestFood.y > myHead.y;
-        priorityMoves.down = bestFood.y < myHead.y;
+    if (myHealth < healthLimit) {
+        priorityMoves = { up: false, down: false, left: false, right: false };
+        let bestFood = findBestFood(myHead, gameState.board.food);
+        if (bestFood) {
+            priorityMoves.right = bestFood.x > myHead.x;
+            priorityMoves.left = bestFood.x < myHead.x;
+            priorityMoves.up = bestFood.y > myHead.y;
+            priorityMoves.down = bestFood.y < myHead.y;
+        }
     }
-    
     let safeMoves = Object.keys(moveSafety).filter(direction => moveSafety[direction]);
     let riskyOptions = Object.keys(riskyMoves).filter(direction => riskyMoves[direction]);
     let futureSafeMoves = safeMoves.filter(move => futureSense(move, gameState, 16));
