@@ -307,7 +307,7 @@ export default function move(gameState) {
       let distance =
         Math.abs(myHead.x - enemyHead.x) + Math.abs(myHead.y - enemyHead.y);
 
-      if (distance <= 2) {
+      if (distance <= 1) {
         priorityMoves.right = enemyHead.x > myHead.x || priorityMoves.right;
         priorityMoves.left = enemyHead.x < myHead.x || priorityMoves.left;
         priorityMoves.up = enemyHead.y > myHead.y || priorityMoves.up;
@@ -339,10 +339,17 @@ export default function move(gameState) {
 
     return bestFood || foodLocations[0];
   }
+  let longestSnake = 0
+  for (const snake of gameState.board.snakes) { 
+      if (snake.id === gameState.you.id) continue;
+      if (snake.body.length > longestSnake) {
+          longestSnake = snake.body.length;
+      }
+  }
   if (gameState.turn < 30 || myLength < 5) {
     healthLimit = 100;
-  } else if (gameState.turn < 120) {
-    healthLimit = 70;
+  } else if (gameState.turn < 120  || myLength + 1 <= longestSnake) {
+    healthLimit = 40 * gameState.board.snakes.length;
   } else {
     healthLimit = 20 * gameState.board.snakes.length;
   }
@@ -531,6 +538,12 @@ export default function move(gameState) {
       (move.y == 0 || move.y == gameState.board.height - 1)) {
     riskyMoveScores[move] -= 40;
   }
+  for (let snake of gameState.board.snakes) {
+    if (snake.id == gameState.you.id) continue;
+    if ((snake.body[snake.length-1].x == move.x) && (snake.body[snake.length-1].y == move.y)){
+      riskyMoveScores[move] -= 40;
+    }
+  }
 
       if (priorityMoves[move]) {
         riskyMoveScores[move] += 15;
@@ -622,7 +635,6 @@ if (safeMoves.length > 0) {
         }
       }
     }
-
     const randomDir =
       allDirections[Math.floor(Math.random() * allDirections.length)];
     console.log(
@@ -804,7 +816,11 @@ function futureSense(move, gameState, depth) {
   ) {
     return false;
   }
-  for (let i = 1; i < myBody.length - 1; i++) {
+  let x = 1
+  if(mySnake.health == 99){
+    x = 0
+  }
+  for (let i = 1; i < myBody.length - x; i++) {
     if (newHead.x == myBody[i].x && newHead.y == myBody[i].y) {
       return false;
     }
