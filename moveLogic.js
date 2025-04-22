@@ -383,7 +383,7 @@ export default function move(gameState) {
     if (gameState.turn < 150) {
       moveScores[move] += distanceToCenter * 12;
     }
-
+    moveScores[move] = penalizeHeadProximity(moveScores[move], myHead, gameState)
     if (gameState.you.health > 40) {
       let nextMoves = countExits(nextPos, gameState.you.body.length).count;
       moveScores[move] += nextMoves * 5;
@@ -894,4 +894,38 @@ function isValidMove(gameState, move) {
   }
 
   return true;
+}
+
+function penalizeHeadProximity(moveScores, myHead, gameState) {
+  const myLength = gameState.you.body.length;
+
+  for (const move in moveScores) {
+    let nextPos = getNextPosition(myHead, move);
+    for (const snake of gameState.board.snakes) {
+      if (snake.id == gameState.you.id) continue;
+      
+      const enemyHead = snake.body[0];
+      const enemyLength = snake.body.length;
+      const distance = Math.abs(nextPos.x - enemyHead.x) + Math.abs(nextPos.y - enemyHead.y);
+      let sizePenalty = 1;
+      if (enemyLength >= myLength) {
+        sizePenalty = 2.5;
+      } else {
+        sizePenalty = 0.5;
+      }
+      
+      // Determine penalty based on distance
+      if (distance <= 1) {
+        moveScores[move] -= 200 * sizePenalty;
+      } else if (distance === 2) {
+        moveScores[move] -= 100 * sizePenalty;
+      } else if (distance === 3) {
+        moveScores[move] -= 50 * sizePenalty;
+      } else if (distance <= 5) {
+        moveScores[move] -= 20 * sizePenalty;
+      }
+    }
+  }
+  
+  return moveScores;
 }
