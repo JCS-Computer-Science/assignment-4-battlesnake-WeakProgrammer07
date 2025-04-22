@@ -321,15 +321,23 @@ export default function move(gameState) {
     let minDistance = 100000;
 
     for (let food of foodLocations) {
+
+      const isCorner =
+        (food.x === 0 || food.x === gameState.board.width - 1) &&
+        (food.y === 0 || food.y === gameState.board.height - 1);
+    
+      if (isCorner) continue;
+    
       let distance =
         Math.abs(snakeHead.x - food.x) + Math.abs(snakeHead.y - food.y);
+    
       if (distance < minDistance) {
         minDistance = distance;
         bestFood = food;
       }
     }
 
-    return bestFood;
+    return bestFood || foodLocations[0];
   }
   if (gameState.turn < 30 || myLength < 5) {
     healthLimit = 100;
@@ -348,6 +356,7 @@ export default function move(gameState) {
       priorityMoves.up = bestFood.y > myHead.y;
       priorityMoves.down = bestFood.y < myHead.y;
     }
+
   }
   let safeMoves = Object.keys(moveSafety).filter(
     (direction) => moveSafety[direction]
@@ -485,11 +494,11 @@ export default function move(gameState) {
       let depthMoveScores = {};
       for (let move of validMovesAtDepth) {
         depthMoveScores[move] = 0;
-        depthMoveScores[move] += spaceScores[move] * 2;
+        depthMoveScores[move] += spaceScores[move] * 2.3;
         if (myHealth < 50) {
           depthMoveScores[move] += priorityMoves[move] ? 400 : 0;
         } else {
-          depthMoveScores[move] += priorityMoves[move] ? 70 : 0;
+          depthMoveScores[move] += priorityMoves[move] ? 20 : 0;
         }
         if (depthMoveScores[move] > bestScoreAtDepth) {
           bestScoreAtDepth = depthMoveScores[move];
