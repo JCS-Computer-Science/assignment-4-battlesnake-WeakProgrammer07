@@ -386,8 +386,6 @@ export default function move(gameState) {
       if (myHealth < 30) {
         moveScores[move] += priorityMoves[move] ? 700 : 0;
       }
-    } else {
-      moveScores[move] += priorityMoves[move] ? 70 : 0;
     }
 
     let nextPos = getNextPosition(myHead, move);
