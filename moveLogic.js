@@ -407,11 +407,7 @@ export default function move(gameState) {
 
     for (const move of tailPriorityMoves) {
       if (moveScores[move] !== undefined) {
-        if (myLength > 4) {
           moveScores[move] = moveScores[move] + tailBias * 10;
-        } else {
-          moveScores[move] += tailBias;
-        }
       }
     }
 
