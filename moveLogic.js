@@ -574,7 +574,7 @@ if (safeMoves.length > 0) {
         (myHead.x > myTail.x && move == "left") ||
         (myHead.y < myTail.y && move == "up") ||
         (myHead.y > myTail.y && move == "down")) {
-          score += 30;
+          score += 60;
     }
     let exitCount = countExits(nextPos).count;
     score += exitCount * 15;
