@@ -250,10 +250,10 @@ function detectEnemyNecks() {
     }
     if(gameState.turn < 30 || myLength < 5){
         healthLimit = 100
-    } else if(gameState.turn < 60){
+    } else if(gameState.turn < 120){
         healthLimit = 70
     } else {
-        healthLimit = 40
+        healthLimit = 20 * gameState.board.snakes.length
     }
     
     if (myHealth < healthLimit) {
@@ -274,7 +274,7 @@ function detectEnemyNecks() {
     futureSafeMoves.forEach(move => {
         
         moveScores[move] = 0;
-        moveScores[move] += spaceScores[move] * 1.5;
+        moveScores[move] += spaceScores[move] * 2;
         if(myHealth < healthLimit){
             moveScores[move] += priorityMoves[move] ? 150 : 0;
             if (myHealth < 30){
@@ -291,7 +291,7 @@ function detectEnemyNecks() {
         let distanceToCenter = Math.abs(nextPos.x - centerX) + Math.abs(nextPos.y - centerY);
         
         if (gameState.turn < 150) {
-            moveScores[move] += (50 - distanceToCenter)
+            moveScores[move] += distanceToCenter * 12
         }
 
         if (gameState.you.health > 40) {
@@ -317,7 +317,7 @@ function detectEnemyNecks() {
         
         for (const move of tailPriorityMoves) {
             if (moveScores[move] !== undefined) {
-                if(myLength > 5){
+                if(myLength > 4){
                     moveScores[move] = moveScores[move] + (tailBias * 10);
                 } else {
                     moveScores[move] += tailBias;
@@ -350,7 +350,7 @@ function detectEnemyNecks() {
                     let currentDistance = Math.abs(myHead.x - enemyHead.x) + Math.abs(myHead.y - enemyHead.y);
                     let newDistance = Math.abs(nextPos.x - enemyHead.x) + Math.abs(nextPos.y - enemyHead.y);
                     if (newDistance < currentDistance) {
-                        moveScores[move] -= 5;
+                        moveScores[move] -= 10;
                     }
                 }
             }
@@ -372,7 +372,7 @@ function detectEnemyNecks() {
                     return { move: bestMove };
                 }
             }
-            for (let depth of [10, 7, 5,4, 3]) {
+            for (let depth of [10,9,8,7]) {
                 let bestMoveAtDepth = null;
                 let bestScoreAtDepth = -100000;
                 let validMovesAtDepth = [];
@@ -385,7 +385,7 @@ function detectEnemyNecks() {
                     let depthMoveScores = {};
                     for (let move of validMovesAtDepth) {
                         depthMoveScores[move] = 0;
-                        depthMoveScores[move] += spaceScores[move] * 1.5;
+                        depthMoveScores[move] += spaceScores[move] * 2;
                         if(myHealth < 50) {
                             depthMoveScores[move] += priorityMoves[move] ? 400 : 0;
                         } else {
@@ -404,10 +404,32 @@ function detectEnemyNecks() {
             }
 
             for (let depth of [10, 5, 3, 2]) {
+                let bestMoveAtDepth = null;
+                let bestScoreAtDepth = -100000;
+                let validMovesAtDepth = [];
                 for (let move of riskyOptions) {
-                    if (futureSense(move, gameState, depth)) {
-                        console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing risky move with ${depth} future-sense: ${move}`);
-                        return { move: move };
+                    if (riskyOptions[move] && futureSense(move, gameState, depth)) {
+                        validMovesAtDepth.push(move);
+                    }
+                }
+                if (validMovesAtDepth.length > 0) {
+                    let depthMoveScores = {};
+                    for (let move of validMovesAtDepth) {
+                        depthMoveScores[move] = 0;
+                        depthMoveScores[move] += spaceScores[move] * 2;
+                        if(myHealth < 50) {
+                            depthMoveScores[move] += priorityMoves[move] ? 400 : 0;
+                        } else {
+                            depthMoveScores[move] += priorityMoves[move] ? 70 : 0;
+                        }
+                        if (depthMoveScores[move] > bestScoreAtDepth) {
+                            bestScoreAtDepth = depthMoveScores[move];
+                            bestMoveAtDepth = move;
+                        }
+                    }
+                    if (bestMoveAtDepth) {
+                        console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing best-scored risky move with ${depth} future-sense: ${bestMoveAtDepth} (score: ${bestScoreAtDepth})`);
+                        return { move: bestMoveAtDepth };
                     }
                 }
             }
@@ -595,16 +617,13 @@ function futureSense(move, gameState, depth) {
     }
 
     myBody.unshift(newHead);
-    if (mySnake.health != 100) {
-        myBody.pop();
-    }
     mySnake.health -= 1;
     
     if (newHead.x < 0 || newHead.x > newGameState.board.width - 1 ||
         newHead.y < 0 || newHead.y > newGameState.board.height - 1) {
         return false;
     }
-    for (let i = 1; i < myBody.length; i++) {
+    for (let i = 1; i < myBody.length - 1; i++) {
         if (newHead.x == myBody[i].x && newHead.y == myBody[i].y) {
             return false;
         }
@@ -644,7 +663,7 @@ function futureSense(move, gameState, depth) {
         let randomMove = possibleEnemyMoves[Math.floor(Math.random() * possibleEnemyMoves.length)];
  
         snake.body.unshift({ x: randomMove.x, y: randomMove.y });
-        if (snake.health  != 100) {
+        if (snake.health != 100) {
             snake.body.pop();
         }
     }
@@ -660,7 +679,7 @@ function futureSense(move, gameState, depth) {
                 }
             }
         }
-        for (let i = 0; i < snake.body.length; i++) {
+        for (let i = 0; i < snake.body.length - 1; i++) {
             if (newHead.x == snake.body[i].x && newHead.y == snake.body[i].y) {
                 return false;
             }
