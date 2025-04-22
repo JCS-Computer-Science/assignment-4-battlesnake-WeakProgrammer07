@@ -303,11 +303,11 @@ export default function move(gameState) {
     let enemyLength = snake.body.length;
 
     // Only hunt snakes that are strictly SMALLER than you
-    if (myLength > enemyLength && myHealth > 60) {
+    if (myLength > enemyLength + 1 && myHealth > 60) {
       let distance =
         Math.abs(myHead.x - enemyHead.x) + Math.abs(myHead.y - enemyHead.y);
 
-      if (distance <= 1) {
+      if (distance <= 3) {
         priorityMoves.right = enemyHead.x > myHead.x || priorityMoves.right;
         priorityMoves.left = enemyHead.x < myHead.x || priorityMoves.left;
         priorityMoves.up = enemyHead.y > myHead.y || priorityMoves.up;
@@ -570,13 +570,13 @@ export default function move(gameState) {
     return { move: bestMove };
   }
 if (safeMoves.length > 0) {
-  let bestSafeScore = -Infinity;
+  let bestSafeScore = -10000000;
   let bestSafeMove = null;
   for (let move of safeMoves) {
     let score = 0;
     let nextPos = getNextPosition(myHead, move);
     score += spaceScores[move] * 3;
-    for (let depth = 15; depth >= 1; depth -= 3) {
+    for (let depth = 10; depth >= 1; depth -= 1) {
       if (futureSense(move, gameState, depth)) {
         score += depth * 10;
         break;
