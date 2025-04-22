@@ -403,7 +403,7 @@ function detectEnemyNecks() {
                 }
             }
 
-            for (let depth of [10, 5, 3, 2]) {
+            for (let depth of [10, 5, 3, 2, 1, 0]) {
                 let bestMoveAtDepth = null;
                 let bestScoreAtDepth = -100000;
                 let validMovesAtDepth = [];
@@ -432,6 +432,11 @@ function detectEnemyNecks() {
                         return { move: bestMoveAtDepth };
                     }
                 }
+            }
+            if (riskyOptions.length > 0) {
+                bestMove = riskyOptions[0];
+                console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Using fallback risky move: ${bestMove}`);
+                return { move: bestMove };
             }
         if (safeMoves.length > 0) {
             bestMove = safeMoves[0];
