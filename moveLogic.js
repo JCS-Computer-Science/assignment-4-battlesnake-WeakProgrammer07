@@ -381,13 +381,16 @@ export default function move(gameState) {
       Math.abs(nextPos.x - centerX) + Math.abs(nextPos.y - centerY);
 
     if (gameState.turn < 150) {
-      moveScores[move] += distanceToCenter * 12;
+      moveScores[move] += distanceToCenter * 6;
     }
     moveScores[move] = penalizeHeadProximity(moveScores[move], myHead, gameState)
     if (gameState.you.health > 40) {
       let nextMoves = countExits(nextPos, gameState.you.body.length).count;
       moveScores[move] += nextMoves * 5;
     }
+
+    
+
     let myTail = myBody[myBody.length - 1];
     let tailPriorityMoves = [];
 
@@ -515,6 +518,10 @@ export default function move(gameState) {
           break;
         }
       }
+  if ((move.x == 0 || move.x == gameState.board.width - 1) && 
+      (move.y == 0 || move.y == gameState.board.height - 1)) {
+    riskyMoveScores[move] -= 40;
+  }
 
       if (priorityMoves[move]) {
         riskyMoveScores[move] += 15;
