@@ -1,5 +1,4 @@
 import e from "express";
-
 export default function move(gameState) {
   gameState.board.snakes.forEach((snake) => console.log(snake.name));
   let moveSafety = {
@@ -506,58 +505,85 @@ export default function move(gameState) {
       }
     }
   }
-
-  for (let depth of [10, 5, 3, 2, 1, 0]) {
-    let bestMoveAtDepth = null;
-    let bestScoreAtDepth = -100000;
-    let validMovesAtDepth = [];
-    for (let move of riskyOptions) {
-      if (riskyOptions[move] && futureSense(move, gameState, depth)) {
-        validMovesAtDepth.push(move);
-      }
-    }
-    if (validMovesAtDepth.length > 0) {
-      let depthMoveScores = {};
-      for (let move of validMovesAtDepth) {
-        depthMoveScores[move] = 0;
-        depthMoveScores[move] += spaceScores[move] * 2;
-        if (myHealth < 50) {
-          depthMoveScores[move] += priorityMoves[move] ? 400 : 0;
-        } else {
-          depthMoveScores[move] += priorityMoves[move] ? 70 : 0;
-        }
-        if (depthMoveScores[move] > bestScoreAtDepth) {
-          bestScoreAtDepth = depthMoveScores[move];
-          bestMoveAtDepth = move;
-        }
-      }
-      if (bestMoveAtDepth) {
-        console.log(
-          `Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing best-scored risky move with ${depth} future-sense: ${bestMoveAtDepth} (score: ${bestScoreAtDepth})`
-        );
-        return { move: bestMoveAtDepth };
-      }
-    }
-  }
   if (riskyOptions.length > 0) {
-    bestMove = riskyOptions[0];
+    let riskyMoveScores = {};
+    
+    riskyOptions.forEach(move => {
+      riskyMoveScores[move] = 0;
+
+      riskyMoveScores[move] += spaceScores[move];
+
+      for (let depth = 10; depth >= 1; depth--) {
+        if (futureSense(move, gameState, depth)) {
+          riskyMoveScores[move] += depth * 20;
+          break;
+        }
+      }
+
+      if (priorityMoves[move]) {
+        riskyMoveScores[move] += 15;
+      }
+
+      let nextPos = getNextPosition(myHead, move);
+      let exitAnalysis = countExits(nextPos);
+      riskyMoveScores[move] += exitAnalysis.count * 10; 
+    });
+    let bestRiskyScore = -Infinity;
+    let bestRiskyMove = null;
+    
+    for (let move of riskyOptions) {
+      if (riskyMoveScores[move] > bestRiskyScore) {
+        bestRiskyScore = riskyMoveScores[move];
+        bestRiskyMove = move;
+      }
+    }
+    
+    bestMove = bestRiskyMove || riskyOptions[0];
     console.log(
-      `Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Using fallback risky move: ${bestMove}`
+      `Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Using fallback (1) risky move: ${bestMove} (score: ${bestRiskyScore}, future survival: ${Math.floor(bestRiskyScore/20)})`
     );
     return { move: bestMove };
   }
-  if (safeMoves.length > 0) {
-    bestMove = safeMoves[0];
-    console.log(
-      `Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Using fallback safe move: ${bestMove}`
-    );
-    return { move: bestMove };
-  } else {
+if (safeMoves.length > 0) {
+  let bestSafeScore = -Infinity;
+  let bestSafeMove = null;
+  for (let move of safeMoves) {
+    let score = 0;
+    let nextPos = getNextPosition(myHead, move);
+    score += spaceScores[move] * 3;
+    for (let depth = 15; depth >= 1; depth -= 3) {
+      if (futureSense(move, gameState, depth)) {
+        score += depth * 10;
+        break;
+      }
+    }
+    let myTail = myBody[myBody.length - 1];
+    if ((myHead.x < myTail.x && move == "right") ||
+        (myHead.x > myTail.x && move == "left") ||
+        (myHead.y < myTail.y && move == "up") ||
+        (myHead.y > myTail.y && move == "down")) {
+          score += 15;
+    }
+    let exitCount = countExits(nextPos).count;
+    score += exitCount * 15;
+    let floodSpace = floodFill(nextPos, 0, new Set());
+    score += floodSpace * 2;
+    if (score > bestSafeScore) {
+      bestSafeScore = score;
+      bestSafeMove = move;
+    }
+  }
+  
+  console.log(
+    `Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing best safe move: ${bestSafeMove} (score: ${bestSafeScore})`
+  );
+  return { move: bestSafeMove || safeMoves[0] };
+} else {
     const allDirections = ["up", "down", "left", "right"];
     if (riskyOptions.length > 0) {
       bestMove = riskyOptions[0];
       console.log(
-        `Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Using fallback risky move: ${bestMove}`
+        `Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Using fallback (2) risky move: ${bestMove}`
       );
       return { move: bestMove };
     }
@@ -639,7 +665,6 @@ export default function move(gameState) {
         limit
       );
     }
-
     return space;
   }
 
