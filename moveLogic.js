@@ -406,6 +406,8 @@ export default function move(gameState) {
 
         moveScores = seekHeadCollisions(gameState, myHead, myLength, moveScores);
 
+        moveScores = avoidTailsAboutToEat(gameState, myHead, moveScores);
+
     let myTail = myBody[myBody.length - 1];
     let tailPriorityMoves = [];
 
@@ -1121,4 +1123,45 @@ function findBestFood(snakeHead, foodLocations, gameState) {
   }
   foodScores.sort((a, b) => b.score - a.score);
   return foodScores[0].food;
+}
+
+function avoidTailsAboutToEat(gameState, myHead, moveScores) {
+  const myNextPositions = {
+    up: { x: myHead.x, y: myHead.y + 1 },
+    down: { x: myHead.x, y: myHead.y - 1 },
+    left: { x: myHead.x - 1, y: myHead.y },
+    right: { x: myHead.x + 1, y: myHead.y }
+  };
+  
+  for (const snake of gameState.board.snakes) {
+    if (snake.id === gameState.you.id) continue;
+    const enemyHead = snake.body[0];
+    const enemyTail = snake.body[snake.body.length - 1];
+    let aboutToEat = false;
+    const enemyNextMoves = [
+      { x: enemyHead.x + 1, y: enemyHead.y },
+      { x: enemyHead.x - 1, y: enemyHead.y },
+      { x: enemyHead.x, y: enemyHead.y + 1 },
+      { x: enemyHead.x, y: enemyHead.y - 1 }
+    ];
+    for (const food of gameState.board.food) {
+      for (const nextMove of enemyNextMoves) {
+        if (nextMove.x === food.x && nextMove.y === food.y) {
+          aboutToEat = true;
+          break;
+        }
+      }
+      if (aboutToEat) break;
+    }
+    if (aboutToEat) {
+      for (const [direction, nextPos] of Object.entries(myNextPositions)) {
+        if (nextPos.x === enemyTail.x && nextPos.y === enemyTail.y) {
+          moveScores[direction] -= 300;
+          console.log(`Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Avoiding move ${direction} - enemy about to eat, tail won't move!`);
+        }
+      }
+    }
+  }
+  
+  return moveScores;
 }
