@@ -24,7 +24,7 @@ export default function move(gameState) {
   let myHead = gameState.you.body[0];
   let myNeck = gameState.you.body[1];
 
-  let healthLimit = 100;
+  let healthLimit = 90;
 
   function safeBack() {
     moveSafety.left = myNeck.x < myHead.x ? false : moveSafety.left;
@@ -391,10 +391,10 @@ export default function move(gameState) {
           }
         }
       }
-      healthLimit = 80; 
+      healthLimit = 70; 
     } else {
       if (myLength + 1 <= longestSnake) {
-        healthLimit = 80;
+        healthLimit = 55;
       } else {
         healthLimit = 40; 
       }
