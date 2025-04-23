@@ -50,6 +50,10 @@ app.post("/move", function(req,res){
 //      but must have status code "200" the request body will contain objects representing the game
 //      https://docs.battlesnake.com/api/requests/end
 
+app.post("/end", function(req,res){
+  res.status(200)
+  res.end()
+})
 const host = '0.0.0.0';
 const port = process.env.PORT || 8000;
 
