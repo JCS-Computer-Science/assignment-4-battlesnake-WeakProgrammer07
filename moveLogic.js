@@ -307,7 +307,7 @@ export default function move(gameState) {
       let distance =
         Math.abs(myHead.x - enemyHead.x) + Math.abs(myHead.y - enemyHead.y);
 
-      if (distance <= 3) {
+      if (distance <= 2) {
         priorityMoves.right = enemyHead.x > myHead.x || priorityMoves.right;
         priorityMoves.left = enemyHead.x < myHead.x || priorityMoves.left;
         priorityMoves.up = enemyHead.y > myHead.y || priorityMoves.up;
