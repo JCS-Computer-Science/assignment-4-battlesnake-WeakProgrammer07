@@ -437,7 +437,7 @@ export default function move(gameState) {
 
     for (const move of tailPriorityMoves) {
       if (moveScores[move] !== undefined) {
-          moveScores[move] = moveScores[move] + (tailBias * 50);
+          moveScores[move] = moveScores[move] + (tailBias * 100);
       }
     }
 
@@ -652,7 +652,7 @@ if (safeMoves.length > 0) {
         (myHead.x > myTail.x && move == "left") ||
         (myHead.y < myTail.y && move == "up") ||
         (myHead.y > myTail.y && move == "down")) {
-          score += 120;
+          score += 500;
     }
     let exitCount = countExits(nextPos).count;
     score += exitCount * 18;
