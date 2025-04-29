@@ -690,18 +690,22 @@ if (safeMoves.length > 0) {
   );
   return { move: bestSafeMove || safeMoves[0] };
 } else {
-    const allDirections = ["up", "down", "left", "right"];
-
-    let myTail = myBody[myBody.length - 1];
-    for (const move of allDirections) {
-      riskyMoveScores[move] = 0;
-        if ((myHead.x < myTail.x && move == "right") ||
-            (myHead.x > myTail.x && move == "left") ||
-            (myHead.y < myTail.y && move == "up") ||
-            (myHead.y > myTail.y && move == "down")) {
-            riskyMoveScores[move] += 10;
-        }
+  const allDirections = ["up", "down", "left", "right"];
+  let riskyMoveScores = {};
+  
+  let myTail = myBody[myBody.length - 1];
+  for (const move of allDirections) {
+    riskyMoveScores[move] = 0;
+    if (
+      (myHead.x < myTail.x && move === "right") ||
+      (myHead.x > myTail.x && move === "left") ||
+      (myHead.y < myTail.y && move === "up") ||
+      (myHead.y > myTail.y && move === "down")
+    ) {
+      riskyMoveScores[move] += 10;
     }
+  }
+  
 
     riskyOptions.sort((a, b) => riskyMoveScores[b] - riskyMoveScores[a]);
     if (riskyOptions.length > 0) {
