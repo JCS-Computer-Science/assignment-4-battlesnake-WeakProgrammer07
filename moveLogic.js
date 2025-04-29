@@ -1,4 +1,3 @@
-import e from "express";
 export default function move(gameState) {
   gameState.board.snakes.forEach((snake) => console.log(snake.name));
   let moveSafety = {
@@ -352,7 +351,7 @@ export default function move(gameState) {
   );
   futureSafeMoves.forEach((move) => {
     moveScores[move] = 0;
-    moveScores[move] += spaceScores[move] * 2;
+    moveScores[move] += spaceScores[move] * 2.5;
 
     for(let haz in gameState.board.hazards){
       if(move.x == haz.x){
@@ -367,7 +366,7 @@ export default function move(gameState) {
       if(gameState.turn < 100){
         moveScores[move] += priorityMoves[move] ? 180 : 0;
       } else {
-        moveScores[move] += priorityMoves[move] ? 300 : 0;
+        moveScores[move] += priorityMoves[move] ? 200 : 0;
       }
       
       if (myHealth < 30) {
@@ -623,7 +622,7 @@ export default function move(gameState) {
 
         let nextPos = getNextPosition(myHead, move);
         let exitAnalysis = countExits(nextPos);
-        riskyMoveScores[move] += exitAnalysis.count * 10;
+        riskyMoveScores[move] += exitAnalysis.count * 15;
 
         
     });
@@ -1154,8 +1153,8 @@ function centerControlStrategy(gameState, myHead, moveScores) {
   for (let dir in moveTowardsCenter) {
     if (moveTowardsCenter[dir]) {
       moveScores[dir] = moveScores[dir] || 0;
-      const turnFactor = Math.max(1, 100 - gameState.turn) / 100;
-      moveScores[dir] += 100 * turnFactor;
+      const turnFactor = Math.max(1, 1000 - gameState.turn) / 100;
+      moveScores[dir] += 75 * turnFactor;
     } 
   }
   
@@ -1176,7 +1175,7 @@ function findBestFood(snakeHead, foodLocations, gameState) {
       (food.x == 0 || food.x == gameState.board.width - 1) &&
       (food.y == 0 || food.y == gameState.board.height - 1);
     
-    if (isCorner) score -= 100;
+    if (isCorner) score -= 400;
     const isEdge = 
       food.x == 0 || food.x == gameState.board.width - 1 ||
       food.y == 0 || food.y == gameState.board.height - 1;
