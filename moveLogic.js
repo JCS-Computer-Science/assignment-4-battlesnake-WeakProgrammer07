@@ -1176,12 +1176,12 @@ function findBestFood(snakeHead, foodLocations, gameState) {
       (food.x == 0 || food.x == gameState.board.width - 1) &&
       (food.y == 0 || food.y == gameState.board.height - 1);
     
-    if (isCorner) score -= 400;
+    if (isCorner) score -= 100;
     const isEdge = 
       food.x == 0 || food.x == gameState.board.width - 1 ||
       food.y == 0 || food.y == gameState.board.height - 1;
     
-    if (isEdge) score -= 250;
+    if (isEdge) score -= 50;
     for (let snake of gameState.board.snakes) {
       if (snake.id == gameState.you.id) continue;
       
