@@ -1,6 +1,3 @@
-import express from 'express';
-
-// Optimized parameters (would normally come from genetic algorithm optimization)
 const optimizedParams = {
   // Space evaluation weights
   SPACE_SCORE_WEIGHT: 2.8,
@@ -272,7 +269,7 @@ export default function move(gameState, params = optimizedParams) {
   return { move: bestMove };
 
   // Helper functions
-  function floodFill(pos, depth, visited, limit = 100) {
+  function floodFill(pos, depth, visited, limit = 60) {
     const key = `${pos.x},${pos.y}`;
     if (visited.has(key) || depth > limit) return 0;
     visited.add(key);
