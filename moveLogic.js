@@ -5,7 +5,7 @@ const optimizedParams = {
   FUTURE_DEPTH_WEIGHT: 12,
 
   // Health and food-seeking weights
-  HEALTH_THRESHOLD: 38,
+  HEALTH_THRESHOLD: 35,
   LOW_HEALTH_BONUS: 420,
   NORMAL_HEALTH_BONUS: 25,
 
@@ -173,7 +173,7 @@ export default function move(gameState, params = optimizedParams) {
   evaluateSpace();
 
   // Health-based food seeking
-  let healthLimit = params.HEALTH_THRESHOLD;
+  let healthLimit = params.HEALTH_THRESHOLD * gameState.board.snakes.length - 0.5;
   if (myLength + 1 <= longestSnake) {
     healthLimit = 30 * gameState.board.snakes.length - 0.5;
   } else {
