@@ -1009,7 +1009,7 @@ function futureSense(move, gameState, depth) {
         continue;
       }
       let hitBody = false;
-      for (let i = 0; i < snake.body.length - 1; i++) {
+      for (let i = 0; i < snake.body.length - depth; i++) {
         if (dir.x == snake.body[i].x && dir.y == snake.body[i].y) {
           hitBody = true;
           break;
