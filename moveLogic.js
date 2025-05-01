@@ -114,6 +114,9 @@ export default function move(gameState) {
 
   selfPreservation();
   riskyPres();
+
+
+
   // Add a new function to detect positions right behind enemy heads
   function detectEnemyNecks() {
     let enemyNecks = [];
@@ -182,13 +185,12 @@ export default function move(gameState) {
             : riskyMoves.left;
         riskyMoves.up =
           myHead.x == neck.x && myHead.y + 1 == neck.y ? false : riskyMoves.up;
-        riskyMoves.down =
-          myHead.x == neck.x && myHead.y - 1 == neck.y
-            ? false
-            : riskyMoves.down;
+        riskyMoves.down = myHead.x == neck.x && myHead.y - 1 == neck.y ? false: riskyMoves.down;
       }
     }
     enemyDodging();
+
+
 
     let enemyHead = enemySnake.body[0];
     let myLength = gameState.you.body.length;
@@ -333,6 +335,29 @@ export default function move(gameState) {
       priorityMoves.down = bestFood.y < myHead.y;
     }
   }
+
+
+  for(let haz of gameState.board.hazards){
+    if(myHead.x - 1 == haz.x){
+      riskyMoves.left == true
+      moveSafety.left == false
+    }
+    if(myHead.x + 1 == haz.x){
+      riskyMoves.right == true
+      moveSafety.right == false
+    }
+    if(myHead.y - 1 == haz.y){
+      riskyMoves.down == true
+      moveSafety.down == false
+    }
+    if(myHead.y + 1 == haz.y){
+      riskyMoves.up == true
+      moveSafety.up == false
+    }
+  }
+
+
+
   let safeMoves = Object.keys(moveSafety).filter(
     (direction) => moveSafety[direction]
   );
@@ -351,12 +376,11 @@ export default function move(gameState) {
     moveScores[move] += spaceScores[move] * 2.5;
     let lowLimit = 30
     for (let haz in gameState.board.hazards) {
-      lowLimit = 50
       if (move.x == haz.x) {
-        moveScores[move] -= 1000;
+        lowLimit = 50
       }
       if (move.y == haz.y) {
-        moveScores[move] -= 1000;
+        lowLimit = 50
       }
     }
 
@@ -371,7 +395,7 @@ export default function move(gameState) {
         moveScores[move] += priorityMoves[move] ? 850 : 0;
       }
       if (myHealth < lowLimit / 2) {
-        moveScores[move] += priorityMoves[move] ? 10000 : 0;
+        moveScores[move] += priorityMoves[move] ? 100000 : 0;
       }
     }
 
@@ -536,7 +560,7 @@ export default function move(gameState) {
   let bestMove = null;
   let bestScore = -100000;
   let futureSafeMovesFinal = safeMoves.filter((move) =>
-    futureSense(move, gameState, 13)
+    futureSense(move, gameState, 12)
   );
   if (futureSafeMovesFinal.length > 0) {
     futureSafeMovesFinal = futureSafeMovesFinal.filter(
@@ -548,7 +572,7 @@ export default function move(gameState) {
         bestMove = move;
       }
     }
-    if (bestMove && moveSafety[bestMove] && bestScore > 50) {
+    if (bestMove && moveSafety[bestMove]) {
       console.log(
         `Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing best future-safe move: ${bestMove} (score: ${moveScores[bestMove]})`
       );
@@ -613,7 +637,7 @@ export default function move(gameState) {
         (myHead.y < myTail.y && move == "up") ||
         (myHead.y > myTail.y && move == "down")
       ) {
-        riskyMoveScores[move] += 600;
+        riskyMoveScores[move] += 1000;
       }
 
       if (
@@ -670,14 +694,13 @@ export default function move(gameState) {
           bestRiskyMove = move;
         }
       }
-      if (bestRiskyScore > 0) {
+
         bestMove = bestRiskyMove || viableRiskyOptions[0];
         console.log(
           `Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Using fallback (1) risky move: ${bestMove} ` +
           `(score: ${bestRiskyScore}, future survival: ${riskyMoveSurvival[bestMove]})`
         );
         return { move: bestMove };
-      }
     } else {
       console.log(
         `Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - No risky moves allow sufficient future survival`
@@ -1009,7 +1032,7 @@ function futureSense(move, gameState, depth) {
         continue;
       }
       let hitBody = false;
-      for (let i = 0; i < snake.body.length - depth; i++) {
+      for (let i = 0; i < snake.body.length - 2; i++) {
         if (dir.x == snake.body[i].x && dir.y == snake.body[i].y) {
           hitBody = true;
           break;
@@ -1188,8 +1211,8 @@ function seekHeadCollisions(gameState, myHead, myLength, moveScores) {
   for (let snake of gameState.board.snakes) {
     if (snake.id == gameState.you.id) continue;
 
-    const enemyHead = snake.body[0];
-    const enemyLength = snake.body.length;
+    let enemyHead = snake.body[0];
+    let enemyLength = snake.body.length;
 
     if (myLength > enemyLength) {
       const enemyMoves = [
@@ -1202,15 +1225,19 @@ function seekHeadCollisions(gameState, myHead, myLength, moveScores) {
       for (let enemyMove of enemyMoves) {
         if (myHead.x + 1 == enemyMove.x && myHead.y == enemyMove.y) {
           moveScores.right += 10000;
+          console.log("ATTACK RIGHT")
         }
         if (myHead.x - 1 == enemyMove.x && myHead.y == enemyMove.y) {
           moveScores.left += 10000;
+          console.log("ATTACK LEFT")
         }
         if (myHead.x == enemyMove.x && myHead.y + 1 == enemyMove.y) {
           moveScores.up += 10000;
+          console.log("ATTACK UP")
         }
         if (myHead.x == enemyMove.x && myHead.y - 1 == enemyMove.y) {
           moveScores.down += 10000;
+          console.log("ATTACK DOWN")
         }
       }
     }
@@ -1240,8 +1267,7 @@ function centerControlStrategy(gameState, myHead, moveScores) {
   for (let dir in moveTowardsCenter) {
     if (moveTowardsCenter[dir]) {
       moveScores[dir] = moveScores[dir] || 0;
-      const turnFactor = Math.max(1, 1000 - gameState.turn) / 100;
-      moveScores[dir] += 75 * turnFactor;
+      moveScores[dir] += 750;
     }
   }
 
@@ -1459,7 +1485,7 @@ function adjustScoresForHeadCollisions(gameState, moveScores) {
   const myLength = gameState.you.body.length;
 
   // Define score adjustments
-  const SHORTER_PENALTY = -200;
+  const SHORTER_PENALTY = -2000;
   const LONGER_BONUS = 10000;
   const EQUAL_PENALTY = -50;
 
