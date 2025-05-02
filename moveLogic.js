@@ -338,21 +338,49 @@ export default function move(gameState) {
 
 
   for(let haz of gameState.board.hazards){
-    if(myHead.x - 1 == haz.x){
+    if(myHead.x - 1 == haz.x && myHead.y == haz.y){
       riskyMoves.left == true
       moveSafety.left == false
     }
-    if(myHead.x + 1 == haz.x){
+    if(myHead.x + 1 == haz.x  && myHead.y == haz.y){
       riskyMoves.right == true
       moveSafety.right == false
     }
-    if(myHead.y - 1 == haz.y){
+    if(myHead.y - 1 == haz.y  && myHead.x == haz.x){
       riskyMoves.down == true
       moveSafety.down == false
     }
-    if(myHead.y + 1 == haz.y){
+    if(myHead.y + 1 == haz.y  && myHead.x == haz.x){
       riskyMoves.up == true
       moveSafety.up == false
+    }
+
+    if(myHead.y == haz.y && myHead.x == haz.x && myHealth < 75){
+      if(myHead.y + 1 != haz.y && myHead.x != haz.x){
+        priorityMoves.up = true
+      }
+      if(myHead.y - 1 != haz.y && myHead.x != haz.x){
+        priorityMoves.down = true
+      }
+      if(myHead.x + 1 != haz.x && myHead.y != haz.y){
+        priorityMoves.right = true
+      }
+      if(myHead.x - 1 != haz.x && myHead.y != haz.y){
+        priorityMoves.left = true
+      }
+
+      if(myHead.y + 2 != haz.y){
+        priorityMoves.up = true
+      }
+      if(myHead.y - 2 != haz.y){
+        priorityMoves.down = true
+      }
+      if(myHead.x + 2 != haz.x){
+        priorityMoves.right = true
+      }
+      if(myHead.x - 2 != haz.x){
+        priorityMoves.left = true
+      }
     }
   }
 
@@ -392,10 +420,10 @@ export default function move(gameState) {
       }
 
       if (myHealth < lowLimit) {
-        moveScores[move] += priorityMoves[move] ? 850 : 0;
+        moveScores[move] += priorityMoves[move] ? 10000 : 0;
       }
       if (myHealth < lowLimit / 2) {
-        moveScores[move] += priorityMoves[move] ? 100000 : 0;
+        moveScores[move] += priorityMoves[move] ? 20000 : 0;
       }
     }
 
@@ -644,7 +672,7 @@ export default function move(gameState) {
         (move.x == 0 || move.x == gameState.board.width - 1) &&
         (move.y == 0 || move.y == gameState.board.height - 1)
       ) {
-        riskyMoveScores[move] -= 300;
+        riskyMoveScores[move] -= 150;
       }
 
       for (let snake of gameState.board.snakes) {
@@ -1283,27 +1311,15 @@ function findBestFood(snakeHead, foodLocations, gameState) {
     const pathLength = bfsPathLength(snakeHead, food, gameState);
     if (pathLength === -1) continue; // Skip unreachable food
     let score = 100 - pathLength * 5;
-
-    const isCorner =
-      (food.x == 0 || food.x == gameState.board.width - 1) &&
-      (food.y == 0 || food.y == gameState.board.height - 1);
-
-    if (isCorner) score -= 200;
-    const isEdge =
-      food.x == 0 ||
-      food.x == gameState.board.width - 1 ||
-      food.y == 0 ||
-      food.y == gameState.board.height - 1;
-
-    if (isEdge) score -= 100;
+    const myDistance =
+        Math.abs(snakeHead.x - food.x) + Math.abs(snakeHead.y - food.y);
     for (let snake of gameState.board.snakes) {
       if (snake.id == gameState.you.id) continue;
 
       const enemyHead = snake.body[0];
       const enemyDistance =
         Math.abs(enemyHead.x - food.x) + Math.abs(enemyHead.y - food.y);
-      const myDistance =
-        Math.abs(snakeHead.x - food.x) + Math.abs(snakeHead.y - food.y);
+      
       if (enemyDistance < myDistance) {
         if (snake.body.length > myLength) {
           score -= 200;
@@ -1311,11 +1327,11 @@ function findBestFood(snakeHead, foodLocations, gameState) {
       }
     }
 
-    const centerX = Math.floor(gameState.board.width / 2);
-    const centerY = Math.floor(gameState.board.height / 2);
-    const centerDistance =
-      Math.abs(food.x - centerX) + Math.abs(food.y - centerY);
-    score -= centerDistance * 2;
+    for(let haz of gameState.board.hazards){
+      if(pathLength > 3 && (snakeHead.x == haz.x && snakeHead.y == haz.y) && (food.x == haz.x && food.y == haz.y)){
+        score -= 100000
+      }
+    }
 
     foodScores.push({ food, score });
   }
@@ -1487,7 +1503,7 @@ function adjustScoresForHeadCollisions(gameState, moveScores) {
   // Define score adjustments
   const SHORTER_PENALTY = -2000;
   const LONGER_BONUS = 10000;
-  const EQUAL_PENALTY = -50;
+  const EQUAL_PENALTY = 0;
 
   const myPossibleMoves = {
     up: { x: myHead.x, y: myHead.y + 1 },
