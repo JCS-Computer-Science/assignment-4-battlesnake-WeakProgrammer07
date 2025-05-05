@@ -337,53 +337,112 @@ export default function move(gameState) {
   }
 
 
-  for(let haz of gameState.board.hazards){
-    if(myHead.x - 1 == haz.x && myHead.y == haz.y){
-      riskyMoves.left == true
-      moveSafety.left == false
+  for (let haz of gameState.board.hazards) {
+    if (myHead.x - 1 === haz.x && myHead.y === haz.y) {
+      riskyMoves.left = true;
+      moveSafety.left = false;
     }
-    if(myHead.x + 1 == haz.x  && myHead.y == haz.y){
-      riskyMoves.right == true
-      moveSafety.right == false
+    if (myHead.x + 1 === haz.x && myHead.y === haz.y) {
+      riskyMoves.right = true;
+      moveSafety.right = false;
     }
-    if(myHead.y - 1 == haz.y  && myHead.x == haz.x){
-      riskyMoves.down == true
-      moveSafety.down == false
+    if (myHead.y - 1 === haz.y && myHead.x === haz.x) {
+      riskyMoves.down = true;
+      moveSafety.down = false;
     }
-    if(myHead.y + 1 == haz.y  && myHead.x == haz.x){
-      riskyMoves.up == true
-      moveSafety.up == false
+    if (myHead.y + 1 === haz.y && myHead.x === haz.x) {
+      riskyMoves.up = true;
+      moveSafety.up = false;
     }
 
-    if(myHead.y == haz.y && myHead.x == haz.x && myHealth < 75){
-      if(myHead.y + 1 != haz.y && myHead.x != haz.x){
-        priorityMoves.up = true
+    if (myHead.x === haz.x && myHead.y === haz.y) {
+      priorityMoves = { up: false, down: false, left: false, right: false };
+
+      const safeDirections = [];
+
+      if (!isCoordinateHazard(myHead.x, myHead.y + 1, gameState.board.hazards)) {
+        safeDirections.push('up');
       }
-      if(myHead.y - 1 != haz.y && myHead.x != haz.x){
-        priorityMoves.down = true
+      if (!isCoordinateHazard(myHead.x, myHead.y - 1, gameState.board.hazards)) {
+        safeDirections.push('down');
       }
-      if(myHead.x + 1 != haz.x && myHead.y != haz.y){
-        priorityMoves.right = true
+      if (!isCoordinateHazard(myHead.x + 1, myHead.y, gameState.board.hazards)) {
+        safeDirections.push('right');
       }
-      if(myHead.x - 1 != haz.x && myHead.y != haz.y){
-        priorityMoves.left = true
+      if (!isCoordinateHazard(myHead.x - 1, myHead.y, gameState.board.hazards)) {
+        safeDirections.push('left');
       }
 
-      if(myHead.y + 2 != haz.y){
-        priorityMoves.up = true
+      if (safeDirections.length > 0) {
+        for (let dir of safeDirections) {
+          priorityMoves[dir] = true;
+        }
+      } else {
+        if (!isCoordinateHazard(myHead.x, myHead.y + 2, gameState.board.hazards)) {
+          priorityMoves.up = true;
+        }
+        if (!isCoordinateHazard(myHead.x, myHead.y - 2, gameState.board.hazards)) {
+          priorityMoves.down = true;
+        }
+        if (!isCoordinateHazard(myHead.x + 2, myHead.y, gameState.board.hazards)) {
+          priorityMoves.right = true;
+        }
+        if (!isCoordinateHazard(myHead.x - 2, myHead.y, gameState.board.hazards)) {
+          priorityMoves.left = true;
+        }
       }
-      if(myHead.y - 2 != haz.y){
-        priorityMoves.down = true
-      }
-      if(myHead.x + 2 != haz.x){
-        priorityMoves.right = true
-      }
-      if(myHead.x - 2 != haz.x){
-        priorityMoves.left = true
+
+      if (myHealth < 50) {
+        const foodDirections = getDirectionsTowardNearestFood(myHead, gameState.board.food, gameState.board.hazards);
+        for (let dir of foodDirections) {
+          if (priorityMoves[dir]) { 
+            priorityMoves[dir] = true;
+          }
+        }
       }
     }
   }
 
+  function isCoordinateHazard(x, y, hazards) {
+    return hazards.some(haz => haz.x === x && haz.y === y);
+  }
+  
+  function getDirectionsTowardNearestFood(head, foodArray, hazards) {
+    const directions = [];
+    if (!foodArray || foodArray.length === 0) return directions;
+    
+    // Find nearest food
+    let nearestFood = null;
+    let minDistance = Infinity;
+    
+    for (let food of foodArray) {
+      const dist = Math.abs(head.x - food.x) + Math.abs(head.y - food.y);
+      if (dist < minDistance && !isCoordinateHazard(food.x, food.y, hazards)) {
+        minDistance = dist;
+        nearestFood = food;
+      }
+    }
+    
+    if (!nearestFood) return directions;
+    
+    // Determine safe directions toward food
+    const dx = nearestFood.x - head.x;
+    const dy = nearestFood.y - head.y;
+    
+    if (dx > 0 && !isCoordinateHazard(head.x + 1, head.y, hazards)) {
+      directions.push('right');
+    } else if (dx < 0 && !isCoordinateHazard(head.x - 1, head.y, hazards)) {
+      directions.push('left');
+    }
+    
+    if (dy > 0 && !isCoordinateHazard(head.x, head.y + 1, hazards)) {
+      directions.push('up');
+    } else if (dy < 0 && !isCoordinateHazard(head.x, head.y - 1, hazards)) {
+      directions.push('down');
+    }
+    
+    return directions;
+  }
 
 
   let safeMoves = Object.keys(moveSafety).filter(
@@ -447,14 +506,14 @@ export default function move(gameState) {
       (move.x == 0 || move.x == gameState.board.width - 1) &&
       (move.y == 0 || move.y == gameState.board.height - 1);
 
-    if (isCorner) moveScores[move] -= 500;
+    if (isCorner) moveScores[move] -= 2500;
     let isEdge =
       move.x == 0 ||
       move.x == gameState.board.width - 1 ||
       move.y == 0 ||
       move.y == gameState.board.height - 1;
 
-    if (isEdge) moveScores[move] -= 300;
+    if (isEdge) moveScores[move] -= 2000;
 
     if (gameState.you.health > 40) {
       let nextMoves = countExits(nextPos, gameState.you.body.length).count;
@@ -546,7 +605,7 @@ export default function move(gameState) {
     const tailBias = Math.max(0, myBody.length - 4);
     for (const move of tailPriorityMoves) {
       if (moveScores[move] !== undefined) {
-        moveScores[move] += tailBias * 20;
+        moveScores[move] += tailBias * 25;
       }
     }
     if (gameState.you.health > 50) {
@@ -724,11 +783,12 @@ export default function move(gameState) {
       }
 
         bestMove = bestRiskyMove || viableRiskyOptions[0];
-        console.log(
-          `Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Using fallback (1) risky move: ${bestMove} ` +
-          `(score: ${bestRiskyScore}, future survival: ${riskyMoveSurvival[bestMove]})`
-        );
-        return { move: bestMove };
+          console.log(
+            `Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Using fallback (1) risky move: ${bestMove} ` +
+            `(score: ${bestRiskyScore}, future survival: ${riskyMoveSurvival[bestMove]})`
+          );
+          return { move: bestMove };
+        
     } else {
       console.log(
         `Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - No risky moves allow sufficient future survival`
@@ -1305,20 +1365,42 @@ function centerControlStrategy(gameState, myHead, moveScores) {
 function findBestFood(snakeHead, foodLocations, gameState) {
   let foodScores = [];
   const myLength = gameState.you.body.length;
+  const myHealth = gameState.you.health;
+  const isStarving = myHealth < 50; // Adjust threshold as needed
 
   if (!foodLocations || foodLocations.length == 0) return null;
+  
   for (let food of foodLocations) {
     const pathLength = bfsPathLength(snakeHead, food, gameState);
     if (pathLength === -1) continue; // Skip unreachable food
+    
+    // Check if food is in a hazard
+    let isInHazard = false;
+    for (let haz of gameState.board.hazards) {
+      if (food.x === haz.x && food.y === haz.y) {
+        isInHazard = true;
+        break;
+      }
+    }
+    
+    // Skip hazardous food unless we're starving and have no other options
+    if (isInHazard && !isStarving) continue;
+    
     let score = 100 - pathLength * 5;
-    const myDistance =
-        Math.abs(snakeHead.x - food.x) + Math.abs(snakeHead.y - food.y);
+    
+    // Penalize hazardous food (but less if we're starving)
+    if (isInHazard) {
+      score -= isStarving ? 50 : 100000;
+    }
+    
+    const myDistance = Math.abs(snakeHead.x - food.x) + Math.abs(snakeHead.y - food.y);
+    
+    // Consider enemy snakes
     for (let snake of gameState.board.snakes) {
       if (snake.id == gameState.you.id) continue;
 
       const enemyHead = snake.body[0];
-      const enemyDistance =
-        Math.abs(enemyHead.x - food.x) + Math.abs(enemyHead.y - food.y);
+      const enemyDistance = Math.abs(enemyHead.x - food.x) + Math.abs(enemyHead.y - food.y);
       
       if (enemyDistance < myDistance) {
         if (snake.body.length > myLength) {
@@ -1327,18 +1409,47 @@ function findBestFood(snakeHead, foodLocations, gameState) {
       }
     }
 
-    for(let haz of gameState.board.hazards){
-      if(pathLength > 3 && (snakeHead.x == haz.x && snakeHead.y == haz.y) && (food.x == haz.x && food.y == haz.y)){
-        score -= 100000
+    // Additional hazard path check
+    for(let haz of gameState.board.hazards) {
+      if(pathLength > (myHealth/15 - 2) && (snakeHead.x == haz.x && snakeHead.y == haz.y) && (food.x == haz.x && food.y == haz.y)) {
+        score -= 100000;
       }
     }
 
-    foodScores.push({ food, score });
+    foodScores.push({ food, score, isInHazard });
   }
 
-  if (foodScores.length === 0) return null;
+  if (foodScores.length === 0) {
+    // If no food found and starving, consider hazardous food we initially skipped
+    if (isStarving) {
+      for (let food of foodLocations) {
+        const pathLength = bfsPathLength(snakeHead, food, gameState);
+        if (pathLength === -1) continue;
+        
+        let isInHazard = false;
+        for (let haz of gameState.board.hazards) {
+          if (food.x === haz.x && food.y === haz.y) {
+            isInHazard = true;
+            break;
+          }
+        }
+        
+        if (isInHazard) {
+          let score = 100 - pathLength * 5 - 50;
+          foodScores.push({ food, score, isInHazard });
+        }
+      }
+    }
+    if (foodScores.length === 0) return null;
+  }
 
-  foodScores.sort((a, b) => b.score - a.score);
+  foodScores.sort((a, b) => {
+    // Prefer non-hazardous food with higher scores
+    if (a.isInHazard && !b.isInHazard) return 1;
+    if (!a.isInHazard && b.isInHazard) return -1;
+    return b.score - a.score;
+  });
+  
   return foodScores[0].food;
 }
 
