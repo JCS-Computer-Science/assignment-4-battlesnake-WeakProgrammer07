@@ -337,113 +337,6 @@ export default function move(gameState) {
   }
 
 
-  for (let haz of gameState.board.hazards) {
-    if (myHead.x - 1 === haz.x && myHead.y === haz.y) {
-      riskyMoves.left = true;
-      moveSafety.left = false;
-    }
-    if (myHead.x + 1 === haz.x && myHead.y === haz.y) {
-      riskyMoves.right = true;
-      moveSafety.right = false;
-    }
-    if (myHead.y - 1 === haz.y && myHead.x === haz.x) {
-      riskyMoves.down = true;
-      moveSafety.down = false;
-    }
-    if (myHead.y + 1 === haz.y && myHead.x === haz.x) {
-      riskyMoves.up = true;
-      moveSafety.up = false;
-    }
-
-    if (myHead.x === haz.x && myHead.y === haz.y) {
-      priorityMoves = { up: false, down: false, left: false, right: false };
-
-      const safeDirections = [];
-
-      if (!isCoordinateHazard(myHead.x, myHead.y + 1, gameState.board.hazards)) {
-        safeDirections.push('up');
-      }
-      if (!isCoordinateHazard(myHead.x, myHead.y - 1, gameState.board.hazards)) {
-        safeDirections.push('down');
-      }
-      if (!isCoordinateHazard(myHead.x + 1, myHead.y, gameState.board.hazards)) {
-        safeDirections.push('right');
-      }
-      if (!isCoordinateHazard(myHead.x - 1, myHead.y, gameState.board.hazards)) {
-        safeDirections.push('left');
-      }
-
-      if (safeDirections.length > 0) {
-        for (let dir of safeDirections) {
-          priorityMoves[dir] = true;
-        }
-      } else {
-        if (!isCoordinateHazard(myHead.x, myHead.y + 2, gameState.board.hazards)) {
-          priorityMoves.up = true;
-        }
-        if (!isCoordinateHazard(myHead.x, myHead.y - 2, gameState.board.hazards)) {
-          priorityMoves.down = true;
-        }
-        if (!isCoordinateHazard(myHead.x + 2, myHead.y, gameState.board.hazards)) {
-          priorityMoves.right = true;
-        }
-        if (!isCoordinateHazard(myHead.x - 2, myHead.y, gameState.board.hazards)) {
-          priorityMoves.left = true;
-        }
-      }
-
-      if (myHealth < 50) {
-        const foodDirections = getDirectionsTowardNearestFood(myHead, gameState.board.food, gameState.board.hazards);
-        for (let dir of foodDirections) {
-          if (priorityMoves[dir]) { 
-            priorityMoves[dir] = true;
-          }
-        }
-      }
-    }
-  }
-
-  function isCoordinateHazard(x, y, hazards) {
-    return hazards.some(haz => haz.x === x && haz.y === y);
-  }
-  
-  function getDirectionsTowardNearestFood(head, foodArray, hazards) {
-    const directions = [];
-    if (!foodArray || foodArray.length === 0) return directions;
-    
-    // Find nearest food
-    let nearestFood = null;
-    let minDistance = Infinity;
-    
-    for (let food of foodArray) {
-      const dist = Math.abs(head.x - food.x) + Math.abs(head.y - food.y);
-      if (dist < minDistance && !isCoordinateHazard(food.x, food.y, hazards)) {
-        minDistance = dist;
-        nearestFood = food;
-      }
-    }
-    
-    if (!nearestFood) return directions;
-    
-    // Determine safe directions toward food
-    const dx = nearestFood.x - head.x;
-    const dy = nearestFood.y - head.y;
-    
-    if (dx > 0 && !isCoordinateHazard(head.x + 1, head.y, hazards)) {
-      directions.push('right');
-    } else if (dx < 0 && !isCoordinateHazard(head.x - 1, head.y, hazards)) {
-      directions.push('left');
-    }
-    
-    if (dy > 0 && !isCoordinateHazard(head.x, head.y + 1, hazards)) {
-      directions.push('up');
-    } else if (dy < 0 && !isCoordinateHazard(head.x, head.y - 1, hazards)) {
-      directions.push('down');
-    }
-    
-    return directions;
-  }
-
 
   let safeMoves = Object.keys(moveSafety).filter(
     (direction) => moveSafety[direction]
@@ -479,10 +372,10 @@ export default function move(gameState) {
       }
 
       if (myHealth < lowLimit) {
-        moveScores[move] += priorityMoves[move] ? 10000 : 0;
+        moveScores[move] += priorityMoves[move] ? 30000 : 0;
       }
       if (myHealth < lowLimit / 2) {
-        moveScores[move] += priorityMoves[move] ? 20000 : 0;
+        moveScores[move] += priorityMoves[move] ? 50000 : 0;
       }
     }
 
@@ -507,13 +400,6 @@ export default function move(gameState) {
       (move.y == 0 || move.y == gameState.board.height - 1);
 
     if (isCorner) moveScores[move] -= 2500;
-    let isEdge =
-      move.x == 0 ||
-      move.x == gameState.board.width - 1 ||
-      move.y == 0 ||
-      move.y == gameState.board.height - 1;
-
-    if (isEdge) moveScores[move] -= 2000;
 
     if (gameState.you.health > 40) {
       let nextMoves = countExits(nextPos, gameState.you.body.length).count;
@@ -535,12 +421,12 @@ export default function move(gameState) {
           }
         }
       }
-      healthLimit = 35 * gameState.board.snakes.length;
+      healthLimit = 20 * gameState.board.snakes.length;
     } else {
       if (myLength + 1 <= longestSnake) {
-        healthLimit = 30 * gameState.board.snakes.length;
+        healthLimit = 15 * gameState.board.snakes.length;
       } else {
-        healthLimit = 25 * gameState.board.snakes.length;
+        healthLimit = 10 * gameState.board.snakes.length;
       }
     }
 
@@ -553,8 +439,6 @@ export default function move(gameState) {
       myHealth,
       moveScores
     );
-
-    moveScores = seekHeadCollisions(gameState, myHead, myLength, moveScores);
 
     moveScores = avoidTailsAboutToEat(gameState, myHead, moveScores);
 
@@ -605,7 +489,7 @@ export default function move(gameState) {
     const tailBias = Math.max(0, myBody.length - 4);
     for (const move of tailPriorityMoves) {
       if (moveScores[move] !== undefined) {
-        moveScores[move] += tailBias * 25;
+        moveScores[move] += tailBias * 2;
       }
     }
     if (gameState.you.health > 50) {
@@ -666,7 +550,7 @@ export default function move(gameState) {
       return { move: bestMove };
     }
   }
-  for (let depth of [10, 9, 8, 7, 6, 5]) {
+  for (let depth of [10, 9, 8, 7, 6, 5, 3]) {
     let bestMoveAtDepth = null;
     let bestScoreAtDepth = -100000;
     let validMovesAtDepth = [];
@@ -707,7 +591,7 @@ export default function move(gameState) {
       riskyMoveSurvival[move] = 0;
 
       // Calculate how many future moves this risky option allows
-      for (let depth = 10; depth >= 1; depth--) {
+      for (let depth = 5; depth >= 1; depth--) {
         if (futureSense(move, gameState, depth)) {
           riskyMoveSurvival[move] = depth;
           riskyMoveScores[move] += depth * 10;
@@ -715,24 +599,7 @@ export default function move(gameState) {
         }
       }
 
-      riskyMoveScores[move] += spaceScores[move];
-
-      let myTail = myBody[myBody.length - 1];
-      if (
-        (myHead.x < myTail.x && move == "right") ||
-        (myHead.x > myTail.x && move == "left") ||
-        (myHead.y < myTail.y && move == "up") ||
-        (myHead.y > myTail.y && move == "down")
-      ) {
-        riskyMoveScores[move] += 1000;
-      }
-
-      if (
-        (move.x == 0 || move.x == gameState.board.width - 1) &&
-        (move.y == 0 || move.y == gameState.board.height - 1)
-      ) {
-        riskyMoveScores[move] -= 150;
-      }
+      riskyMoveScores[move] += spaceScores[move] * 2;
 
       for (let snake of gameState.board.snakes) {
         if (snake.id == gameState.you.id) continue;
@@ -764,7 +631,7 @@ export default function move(gameState) {
 
       let nextPos = getNextPosition(myHead, move);
       let exitAnalysis = countExits(nextPos);
-      riskyMoveScores[move] += exitAnalysis.count * 15;
+      riskyMoveScores[move] += exitAnalysis.count * 50;
     });
 
     let bestRiskyScore = -Infinity;
@@ -783,11 +650,14 @@ export default function move(gameState) {
       }
 
         bestMove = bestRiskyMove || viableRiskyOptions[0];
+        if(bestRiskyScore > 0){
           console.log(
             `Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Using fallback (1) risky move: ${bestMove} ` +
             `(score: ${bestRiskyScore}, future survival: ${riskyMoveSurvival[bestMove]})`
           );
           return { move: bestMove };
+        }
+
         
     } else {
       console.log(
@@ -1120,7 +990,7 @@ function futureSense(move, gameState, depth) {
         continue;
       }
       let hitBody = false;
-      for (let i = 0; i < snake.body.length - 2; i++) {
+      for (let i = 0; i < snake.body.length - 1; i++) {
         if (dir.x == snake.body[i].x && dir.y == snake.body[i].y) {
           hitBody = true;
           break;
@@ -1295,44 +1165,6 @@ function huntSmallerSnakes(gameState, myHead, myLength, myHealth, moveScores) {
   return moveScores;
 }
 
-function seekHeadCollisions(gameState, myHead, myLength, moveScores) {
-  for (let snake of gameState.board.snakes) {
-    if (snake.id == gameState.you.id) continue;
-
-    let enemyHead = snake.body[0];
-    let enemyLength = snake.body.length;
-
-    if (myLength > enemyLength) {
-      const enemyMoves = [
-        { x: enemyHead.x + 1, y: enemyHead.y },
-        { x: enemyHead.x - 1, y: enemyHead.y },
-        { x: enemyHead.x, y: enemyHead.y + 1 },
-        { x: enemyHead.x, y: enemyHead.y - 1 },
-      ];
-
-      for (let enemyMove of enemyMoves) {
-        if (myHead.x + 1 == enemyMove.x && myHead.y == enemyMove.y) {
-          moveScores.right += 10000;
-          console.log("ATTACK RIGHT")
-        }
-        if (myHead.x - 1 == enemyMove.x && myHead.y == enemyMove.y) {
-          moveScores.left += 10000;
-          console.log("ATTACK LEFT")
-        }
-        if (myHead.x == enemyMove.x && myHead.y + 1 == enemyMove.y) {
-          moveScores.up += 10000;
-          console.log("ATTACK UP")
-        }
-        if (myHead.x == enemyMove.x && myHead.y - 1 == enemyMove.y) {
-          moveScores.down += 10000;
-          console.log("ATTACK DOWN")
-        }
-      }
-    }
-  }
-
-  return moveScores;
-}
 
 function centerControlStrategy(gameState, myHead, moveScores) {
   if (gameState.turn > 100) return moveScores;
@@ -1355,7 +1187,7 @@ function centerControlStrategy(gameState, myHead, moveScores) {
   for (let dir in moveTowardsCenter) {
     if (moveTowardsCenter[dir]) {
       moveScores[dir] = moveScores[dir] || 0;
-      moveScores[dir] += 750;
+      moveScores[dir] += 500;
     }
   }
 
@@ -1366,36 +1198,30 @@ function findBestFood(snakeHead, foodLocations, gameState) {
   let foodScores = [];
   const myLength = gameState.you.body.length;
   const myHealth = gameState.you.health;
-  const isStarving = myHealth < 50; // Adjust threshold as needed
+  const isStarving = myHealth < 65; // threshold
+
+  // Check if we're currently in a hazard
+  const inHazard = gameState.board.hazards.some(haz => 
+    haz.x === snakeHead.x && haz.y === snakeHead.y
+  );
 
   if (!foodLocations || foodLocations.length == 0) return null;
-  
+
+  // First pass: find all reachable food
   for (let food of foodLocations) {
     const pathLength = bfsPathLength(snakeHead, food, gameState);
-    if (pathLength === -1) continue; // Skip unreachable food
-    
-    // Check if food is in a hazard
-    let isInHazard = false;
-    for (let haz of gameState.board.hazards) {
-      if (food.x === haz.x && food.y === haz.y) {
-        isInHazard = true;
-        break;
-      }
-    }
-    
-    // Skip hazardous food unless we're starving and have no other options
-    if (isInHazard && !isStarving) continue;
+    if (pathLength === -1) continue; 
+
+    let isInHazard = gameState.board.hazards.some(haz => 
+      food.x === haz.x && food.y === haz.y
+    );
+
+    if (isInHazard && !isStarving && !inHazard) continue;
     
     let score = 100 - pathLength * 5;
     
-    // Penalize hazardous food (but less if we're starving)
-    if (isInHazard) {
-      score -= isStarving ? 50 : 100000;
-    }
-    
     const myDistance = Math.abs(snakeHead.x - food.x) + Math.abs(snakeHead.y - food.y);
-    
-    // Consider enemy snakes
+
     for (let snake of gameState.board.snakes) {
       if (snake.id == gameState.you.id) continue;
 
@@ -1409,34 +1235,31 @@ function findBestFood(snakeHead, foodLocations, gameState) {
       }
     }
 
-    // Additional hazard path check
-    for(let haz of gameState.board.hazards) {
-      if(pathLength > (myHealth/15 - 2) && (snakeHead.x == haz.x && snakeHead.y == haz.y) && (food.x == haz.x && food.y == haz.y)) {
-        score -= 100000;
-      }
-    }
-
-    foodScores.push({ food, score, isInHazard });
+    foodScores.push({ food, score, isInHazard, pathLength });
   }
 
-  if (foodScores.length === 0) {
-    // If no food found and starving, consider hazardous food we initially skipped
+  // If we're in hazard and can't reach safe area in 2 moves, prioritize closest food
+  if (inHazard) {
+    let canReachSafeIn2Moves = canReachSafeAreaInMoves(snakeHead, gameState, 2)
+    if (!canReachSafeIn2Moves && foodScores.length > 0) {
+      foodScores.sort((a, b) => a.pathLength - b.pathLength);
+      return foodScores[0].food;
+    }
+  }
+
+  if (foodScores.length == 0) {
     if (isStarving) {
       for (let food of foodLocations) {
         const pathLength = bfsPathLength(snakeHead, food, gameState);
         if (pathLength === -1) continue;
         
-        let isInHazard = false;
-        for (let haz of gameState.board.hazards) {
-          if (food.x === haz.x && food.y === haz.y) {
-            isInHazard = true;
-            break;
-          }
-        }
+        let isInHazard = gameState.board.hazards.some(haz => 
+          food.x === haz.x && food.y === haz.y
+        );
         
         if (isInHazard) {
           let score = 100 - pathLength * 5 - 50;
-          foodScores.push({ food, score, isInHazard });
+          foodScores.push({ food, score, isInHazard, pathLength });
         }
       }
     }
@@ -1444,13 +1267,68 @@ function findBestFood(snakeHead, foodLocations, gameState) {
   }
 
   foodScores.sort((a, b) => {
-    // Prefer non-hazardous food with higher scores
     if (a.isInHazard && !b.isInHazard) return 1;
     if (!a.isInHazard && b.isInHazard) return -1;
     return b.score - a.score;
   });
   
   return foodScores[0].food;
+}
+
+// Helper function to check if we can reach a safe area within some moves
+function canReachSafeAreaInMoves(start, gameState, maxMoves) {
+  const { width, height } = gameState.board;
+  const visited = new Set();
+  const queue = [{ pos: start, dist: 0 }];
+
+  const key = (x, y) => `${x},${y}`;
+
+  const isSafe = (x, y) => {
+    if (x < 0 || x >= width || y < 0 || y >= height) return false;
+
+    const isHazardFree = !gameState.board.hazards.some(haz => 
+      haz.x === x && haz.y === y
+    );
+
+    const isSnakeFree = !gameState.board.snakes.some(snake => 
+      snake.body.some(segment => segment.x === x && segment.y === y)
+    );
+
+    return isHazardFree && isSnakeFree;
+  };
+
+  while (queue.length > 0) {
+    const { pos, dist } = queue.shift();
+    const k = key(pos.x, pos.y);
+    if (visited.has(k)) continue;
+    visited.add(k);
+
+    if (dist <= maxMoves) {
+      const isCurrentHazard = gameState.board.hazards.some(haz => 
+        haz.x === pos.x && haz.y === pos.y
+      );
+      if (!isCurrentHazard) {
+        return true;
+      }
+    } else {
+      return false;
+    }
+
+    for (const [dx, dy] of [
+      [0, 1],
+      [1, 0],
+      [-1, 0],
+      [0, -1],
+    ]) {
+      const nx = pos.x + dx;
+      const ny = pos.y + dy;
+      if (isSafe(nx, ny)) {
+        queue.push({ pos: { x: nx, y: ny }, dist: dist + 1 });
+      }
+    }
+  }
+
+  return false;
 }
 
 function bfsPathLength(start, goal, gameState) {
@@ -1613,7 +1491,7 @@ function adjustScoresForHeadCollisions(gameState, moveScores) {
 
   // Define score adjustments
   const SHORTER_PENALTY = -2000;
-  const LONGER_BONUS = 10000;
+  const LONGER_BONUS = 1000;
   const EQUAL_PENALTY = 0;
 
   const myPossibleMoves = {
