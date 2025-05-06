@@ -489,7 +489,7 @@ export default function move(gameState) {
     const tailBias = Math.max(0, myBody.length - 4);
     for (const move of tailPriorityMoves) {
       if (moveScores[move] !== undefined) {
-        moveScores[move] += tailBias * 2;
+        moveScores[move] += tailBias * 50;
       }
     }
     if (gameState.you.health > 50) {
@@ -640,7 +640,6 @@ export default function move(gameState) {
     let viableRiskyOptions = riskyOptions.filter(
       (move) => riskyMoveSurvival[move] > myLength / 5
     );
-    riskyMoveScores = adjustScoresForHeadCollisions(gameState, riskyMoveScores);
     if (viableRiskyOptions.length > 0) {
       for (let move of viableRiskyOptions) {
         if (riskyMoveScores[move] > bestRiskyScore) {
@@ -650,13 +649,11 @@ export default function move(gameState) {
       }
 
         bestMove = bestRiskyMove || viableRiskyOptions[0];
-        if(bestRiskyScore > 0){
           console.log(
             `Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Using fallback (1) risky move: ${bestMove} ` +
             `(score: ${bestRiskyScore}, future survival: ${riskyMoveSurvival[bestMove]})`
           );
           return { move: bestMove };
-        }
 
         
     } else {
@@ -1241,6 +1238,9 @@ function findBestFood(snakeHead, foodLocations, gameState) {
   // If we're in hazard and can't reach safe area in 2 moves, prioritize closest food
   if (inHazard) {
     let canReachSafeIn2Moves = canReachSafeAreaInMoves(snakeHead, gameState, 2)
+    if(gameState.you.health < 31){
+      canReachSafeIn2Moves = canReachSafeAreaInMoves(snakeHead, gameState, 1)
+    }
     if (!canReachSafeIn2Moves && foodScores.length > 0) {
       foodScores.sort((a, b) => a.pathLength - b.pathLength);
       return foodScores[0].food;
@@ -1485,49 +1485,4 @@ function enemyTrapped(gameState, moveScores) {
   return moveScores;
 }
 
-function adjustScoresForHeadCollisions(gameState, moveScores) {
-  const myHead = gameState.you.body[0];
-  const myLength = gameState.you.body.length;
 
-  // Define score adjustments
-  const SHORTER_PENALTY = -2000;
-  const LONGER_BONUS = 1000;
-  const EQUAL_PENALTY = 0;
-
-  const myPossibleMoves = {
-    up: { x: myHead.x, y: myHead.y + 1 },
-    down: { x: myHead.x, y: myHead.y - 1 },
-    left: { x: myHead.x - 1, y: myHead.y },
-    right: { x: myHead.x + 1, y: myHead.y },
-  };
-
-  for (let snake of gameState.board.snakes) {
-    if (snake.id === gameState.you.id) continue;
-
-    const enemyHead = snake.body[0];
-    const enemyLength = snake.body.length;
-
-    const enemyPossibleMoves = [
-      { x: enemyHead.x + 1, y: enemyHead.y },
-      { x: enemyHead.x - 1, y: enemyHead.y },
-      { x: enemyHead.x, y: enemyHead.y + 1 },
-      { x: enemyHead.x, y: enemyHead.y - 1 },
-    ];
-
-    for (const [direction, myNextPos] of Object.entries(myPossibleMoves)) {
-      for (const enemyNextPos of enemyPossibleMoves) {
-        if (myNextPos.x === enemyNextPos.x && myNextPos.y === enemyNextPos.y) {
-          if (myLength < enemyLength) {
-            moveScores[direction] += SHORTER_PENALTY;
-          } else if (myLength > enemyLength) {
-            moveScores[direction] += LONGER_BONUS;
-          } else {
-            moveScores[direction] += EQUAL_PENALTY;
-          }
-        }
-      }
-    }
-  }
-
-  return moveScores;
-}
