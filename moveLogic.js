@@ -115,8 +115,6 @@ export default function move(gameState) {
   selfPreservation();
   riskyPres();
 
-
-
   // Add a new function to detect positions right behind enemy heads
   function detectEnemyNecks() {
     let enemyNecks = [];
@@ -185,12 +183,13 @@ export default function move(gameState) {
             : riskyMoves.left;
         riskyMoves.up =
           myHead.x == neck.x && myHead.y + 1 == neck.y ? false : riskyMoves.up;
-        riskyMoves.down = myHead.x == neck.x && myHead.y - 1 == neck.y ? false: riskyMoves.down;
+        riskyMoves.down =
+          myHead.x == neck.x && myHead.y - 1 == neck.y
+            ? false
+            : riskyMoves.down;
       }
     }
     enemyDodging();
-
-
 
     let enemyHead = enemySnake.body[0];
     let myLength = gameState.you.body.length;
@@ -297,26 +296,6 @@ export default function move(gameState) {
   let myLength = gameState.you.body.length;
   let myHealth = gameState.you.health;
 
-  for (let snake of gameState.board.snakes) {
-    if (snake.id == gameState.you.id) continue;
-
-    let enemyHead = snake.body[0];
-    let enemyLength = snake.body.length;
-
-    // Only hunt snakes that are strictly SMALLER than you
-    if (myLength > enemyLength + 1 && myHealth > 60) {
-      let distance =
-        Math.abs(myHead.x - enemyHead.x) + Math.abs(myHead.y - enemyHead.y);
-
-      if (distance <= 2) {
-        priorityMoves.right = enemyHead.x > myHead.x || priorityMoves.right;
-        priorityMoves.left = enemyHead.x < myHead.x || priorityMoves.left;
-        priorityMoves.up = enemyHead.y > myHead.y || priorityMoves.up;
-        priorityMoves.down = enemyHead.y < myHead.y || priorityMoves.down;
-      }
-    }
-  }
-
   let longestSnake = 0;
   for (const snake of gameState.board.snakes) {
     if (snake.id == gameState.you.id) continue;
@@ -336,8 +315,6 @@ export default function move(gameState) {
     }
   }
 
-
-
   let safeMoves = Object.keys(moveSafety).filter(
     (direction) => moveSafety[direction]
   );
@@ -354,13 +331,13 @@ export default function move(gameState) {
   futureSafeMoves.forEach((move) => {
     moveScores[move] = 0;
     moveScores[move] += spaceScores[move] * 2.5;
-    let lowLimit = 30
+    let lowLimit = 30;
     for (let haz in gameState.board.hazards) {
       if (move.x == haz.x) {
-        lowLimit = 50
+        lowLimit = 50;
       }
       if (move.y == haz.y) {
-        lowLimit = 50
+        lowLimit = 50;
       }
     }
 
@@ -648,14 +625,12 @@ export default function move(gameState) {
         }
       }
 
-        bestMove = bestRiskyMove || viableRiskyOptions[0];
-          console.log(
-            `Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Using fallback (1) risky move: ${bestMove} ` +
-            `(score: ${bestRiskyScore}, future survival: ${riskyMoveSurvival[bestMove]})`
-          );
-          return { move: bestMove };
-
-        
+      bestMove = bestRiskyMove || viableRiskyOptions[0];
+      console.log(
+        `Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Using fallback (1) risky move: ${bestMove} ` +
+          `(score: ${bestRiskyScore}, future survival: ${riskyMoveSurvival[bestMove]})`
+      );
+      return { move: bestMove };
     } else {
       console.log(
         `Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - No risky moves allow sufficient future survival`
@@ -713,12 +688,10 @@ export default function move(gameState) {
         // Look ahead for potential survivability
         for (let depth = 10; depth >= 1; depth--) {
           if (futureSense(move, gameState, depth)) {
-            score += depth * 6; 
+            score += depth * 6;
             break;
           }
         }
-
-
 
         // Tail bias (escape routes)
         let myTail = myBody[myBody.length - 1];
@@ -1162,7 +1135,6 @@ function huntSmallerSnakes(gameState, myHead, myLength, myHealth, moveScores) {
   return moveScores;
 }
 
-
 function centerControlStrategy(gameState, myHead, moveScores) {
   if (gameState.turn > 100) return moveScores;
 
@@ -1198,8 +1170,8 @@ function findBestFood(snakeHead, foodLocations, gameState) {
   const isStarving = myHealth < 65; // threshold
 
   // Check if we're currently in a hazard
-  const inHazard = gameState.board.hazards.some(haz => 
-    haz.x === snakeHead.x && haz.y === snakeHead.y
+  const inHazard = gameState.board.hazards.some(
+    (haz) => haz.x === snakeHead.x && haz.y === snakeHead.y
   );
 
   if (!foodLocations || foodLocations.length == 0) return null;
@@ -1207,24 +1179,26 @@ function findBestFood(snakeHead, foodLocations, gameState) {
   // First pass: find all reachable food
   for (let food of foodLocations) {
     const pathLength = bfsPathLength(snakeHead, food, gameState);
-    if (pathLength === -1) continue; 
+    if (pathLength === -1) continue;
 
-    let isInHazard = gameState.board.hazards.some(haz => 
-      food.x === haz.x && food.y === haz.y
+    let isInHazard = gameState.board.hazards.some(
+      (haz) => food.x === haz.x && food.y === haz.y
     );
 
     if (isInHazard && !isStarving && !inHazard) continue;
-    
+
     let score = 100 - pathLength * 5;
-    
-    const myDistance = Math.abs(snakeHead.x - food.x) + Math.abs(snakeHead.y - food.y);
+
+    const myDistance =
+      Math.abs(snakeHead.x - food.x) + Math.abs(snakeHead.y - food.y);
 
     for (let snake of gameState.board.snakes) {
       if (snake.id == gameState.you.id) continue;
 
       const enemyHead = snake.body[0];
-      const enemyDistance = Math.abs(enemyHead.x - food.x) + Math.abs(enemyHead.y - food.y);
-      
+      const enemyDistance =
+        Math.abs(enemyHead.x - food.x) + Math.abs(enemyHead.y - food.y);
+
       if (enemyDistance < myDistance) {
         if (snake.body.length > myLength) {
           score -= 200;
@@ -1237,9 +1211,9 @@ function findBestFood(snakeHead, foodLocations, gameState) {
 
   // If we're in hazard and can't reach safe area in 2 moves, prioritize closest food
   if (inHazard) {
-    let canReachSafeIn2Moves = canReachSafeAreaInMoves(snakeHead, gameState, 2)
-    if(gameState.you.health < 31){
-      canReachSafeIn2Moves = canReachSafeAreaInMoves(snakeHead, gameState, 1)
+    let canReachSafeIn2Moves = canReachSafeAreaInMoves(snakeHead, gameState, 2);
+    if (gameState.you.health < 31) {
+      canReachSafeIn2Moves = canReachSafeAreaInMoves(snakeHead, gameState, 1);
     }
     if (!canReachSafeIn2Moves && foodScores.length > 0) {
       foodScores.sort((a, b) => a.pathLength - b.pathLength);
@@ -1252,11 +1226,11 @@ function findBestFood(snakeHead, foodLocations, gameState) {
       for (let food of foodLocations) {
         const pathLength = bfsPathLength(snakeHead, food, gameState);
         if (pathLength === -1) continue;
-        
-        let isInHazard = gameState.board.hazards.some(haz => 
-          food.x === haz.x && food.y === haz.y
+
+        let isInHazard = gameState.board.hazards.some(
+          (haz) => food.x === haz.x && food.y === haz.y
         );
-        
+
         if (isInHazard) {
           let score = 100 - pathLength * 5 - 50;
           foodScores.push({ food, score, isInHazard, pathLength });
@@ -1271,7 +1245,7 @@ function findBestFood(snakeHead, foodLocations, gameState) {
     if (!a.isInHazard && b.isInHazard) return -1;
     return b.score - a.score;
   });
-  
+
   return foodScores[0].food;
 }
 
@@ -1286,12 +1260,12 @@ function canReachSafeAreaInMoves(start, gameState, maxMoves) {
   const isSafe = (x, y) => {
     if (x < 0 || x >= width || y < 0 || y >= height) return false;
 
-    const isHazardFree = !gameState.board.hazards.some(haz => 
-      haz.x === x && haz.y === y
+    const isHazardFree = !gameState.board.hazards.some(
+      (haz) => haz.x === x && haz.y === y
     );
 
-    const isSnakeFree = !gameState.board.snakes.some(snake => 
-      snake.body.some(segment => segment.x === x && segment.y === y)
+    const isSnakeFree = !gameState.board.snakes.some((snake) =>
+      snake.body.some((segment) => segment.x === x && segment.y === y)
     );
 
     return isHazardFree && isSnakeFree;
@@ -1304,8 +1278,8 @@ function canReachSafeAreaInMoves(start, gameState, maxMoves) {
     visited.add(k);
 
     if (dist <= maxMoves) {
-      const isCurrentHazard = gameState.board.hazards.some(haz => 
-        haz.x === pos.x && haz.y === pos.y
+      const isCurrentHazard = gameState.board.hazards.some(
+        (haz) => haz.x === pos.x && haz.y === pos.y
       );
       if (!isCurrentHazard) {
         return true;
@@ -1484,5 +1458,3 @@ function enemyTrapped(gameState, moveScores) {
 
   return moveScores;
 }
-
-
