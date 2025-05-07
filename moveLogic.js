@@ -363,60 +363,10 @@ export default function move(gameState) {
           priorityMoves.left = true;
         }
       }
-      if (gameState.you.health < 50) {
-        const foodDirections = getDirectionsTowardNearestFood(
-          myHead,
-          gameState.board.food,
-          gameState.board.hazards
-        );
-        for (let dir of foodDirections) {
-          if (priorityMoves[dir]) {
-            priorityMoves[dir] = true;
-          }
-        }
-      }
     }
   }
-
   function isCoordinateHazard(x, y, hazards) {
     return hazards.some((haz) => haz.x === x && haz.y === y);
-  }
-
-  function getDirectionsTowardNearestFood(head, foodArray, hazards) {
-    const directions = [];
-    if (!foodArray || foodArray.length === 0) return directions;
-
-    // Find nearest food
-    let nearestFood = null;
-    let minDistance = Infinity;
-
-    for (let food of foodArray) {
-      const dist = Math.abs(head.x - food.x) + Math.abs(head.y - food.y);
-      if (dist < minDistance && !isCoordinateHazard(food.x, food.y, hazards)) {
-        minDistance = dist;
-        nearestFood = food;
-      }
-    }
-
-    if (!nearestFood) return directions;
-
-    // Determine safe directions toward food
-    const dx = nearestFood.x - head.x;
-    const dy = nearestFood.y - head.y;
-
-    if (dx > 0 && !isCoordinateHazard(head.x + 1, head.y, hazards)) {
-      directions.push("right");
-    } else if (dx < 0 && !isCoordinateHazard(head.x - 1, head.y, hazards)) {
-      directions.push("left");
-    }
-
-    if (dy > 0 && !isCoordinateHazard(head.x, head.y + 1, hazards)) {
-      directions.push("up");
-    } else if (dy < 0 && !isCoordinateHazard(head.x, head.y - 1, hazards)) {
-      directions.push("down");
-    }
-
-    return directions;
   }
 
   let myLength = gameState.you.body.length;
