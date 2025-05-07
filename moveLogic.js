@@ -712,24 +712,18 @@ export default function move(gameState) {
         ) {
           riskyMoveScores[move] -= 40;
         }
-        for (let food of gameState.board.food) {
-          if (snake.body[0].x + 1 == food.x && snake.body[0].y == food.y) {
-            riskyMoveScores.right -= 40;
-          }
-          if (snake.body[0].x - 1 == food.x && snake.body[0].y == food.y) {
-            riskyMoveScores.left -= 40;
-          }
-          if (snake.body[0].x == food.x && snake.body[0].y + 1 == food.y) {
-            riskyMoveScores.up -= 40;
-          }
-          if (snake.body[0].x == food.x && snake.body[0].y - 1 == food.y) {
-            riskyMoveScores.down -= 40;
-          }
-        }
+      }
+
+      let bestFood = findBestFood(myHead, gameState.board.food, gameState);
+      if (bestFood) {
+        priorityMoves.right = bestFood.x > myHead.x;
+        priorityMoves.left = bestFood.x < myHead.x;
+        priorityMoves.up = bestFood.y > myHead.y;
+        priorityMoves.down = bestFood.y < myHead.y;
       }
 
       if (priorityMoves[move]) {
-        riskyMoveScores[move] += 15;
+        riskyMoveScores[move] += 500;
       }
 
       let nextPos = getNextPosition(myHead, move);
