@@ -603,7 +603,7 @@ export default function move(gameState) {
       return { move: bestMove };
     }
   }
-  for (let depth of [10, 9, 8, 7, 6, 5]) {
+  for (let depth of [10, 9, 8, gameState.you.body.length]) {
     let bestMoveAtDepth = null;
     let bestScoreAtDepth = -100000;
     let validMovesAtDepth = [];
