@@ -1058,7 +1058,7 @@ function futureSense(move, gameState, depth) {
     x = 0;
   }
   mySnake.health -= 1;
-  for (let i = 1; i < myBody.length - x; i++) {
+  for (let i = 1; i < myBody.length - 1; i++) {
     if (newHead.x == myBody[i].x && newHead.y == myBody[i].y) {
       return false;
     }
