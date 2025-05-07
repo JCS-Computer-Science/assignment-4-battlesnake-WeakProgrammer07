@@ -293,6 +293,133 @@ export default function move(gameState) {
   }
   evaluateSpace();
 
+  for (let haz of gameState.board.hazards) {
+    if (myHead.x - 1 === haz.x && myHead.y === haz.y) {
+      riskyMoves.left = true;
+      moveSafety.left = false;
+    }
+    if (myHead.x + 1 === haz.x && myHead.y === haz.y) {
+      riskyMoves.right = true;
+      moveSafety.right = false;
+    }
+    if (myHead.y - 1 === haz.y && myHead.x === haz.x) {
+      riskyMoves.down = true;
+      moveSafety.down = false;
+    }
+    if (myHead.y + 1 === haz.y && myHead.x === haz.x) {
+      riskyMoves.up = true;
+      moveSafety.up = false;
+    }
+
+    if (myHead.x === haz.x && myHead.y === haz.y) {
+      priorityMoves = { up: false, down: false, left: false, right: false };
+
+      const safeDirections = [];
+
+      if (
+        !isCoordinateHazard(myHead.x, myHead.y + 1, gameState.board.hazards)
+      ) {
+        safeDirections.push("up");
+      }
+      if (
+        !isCoordinateHazard(myHead.x, myHead.y - 1, gameState.board.hazards)
+      ) {
+        safeDirections.push("down");
+      }
+      if (
+        !isCoordinateHazard(myHead.x + 1, myHead.y, gameState.board.hazards)
+      ) {
+        safeDirections.push("right");
+      }
+      if (
+        !isCoordinateHazard(myHead.x - 1, myHead.y, gameState.board.hazards)
+      ) {
+        safeDirections.push("left");
+      }
+
+      if (safeDirections.length > 0) {
+        for (let dir of safeDirections) {
+          priorityMoves[dir] = true;
+        }
+      } else {
+        if (
+          !isCoordinateHazard(myHead.x, myHead.y + 2, gameState.board.hazards)
+        ) {
+          priorityMoves.up = true;
+        }
+        if (
+          !isCoordinateHazard(myHead.x, myHead.y - 2, gameState.board.hazards)
+        ) {
+          priorityMoves.down = true;
+        }
+        if (
+          !isCoordinateHazard(myHead.x + 2, myHead.y, gameState.board.hazards)
+        ) {
+          priorityMoves.right = true;
+        }
+        if (
+          !isCoordinateHazard(myHead.x - 2, myHead.y, gameState.board.hazards)
+        ) {
+          priorityMoves.left = true;
+        }
+      }
+
+      if (myHealth < 50) {
+        const foodDirections = getDirectionsTowardNearestFood(
+          myHead,
+          gameState.board.food,
+          gameState.board.hazards
+        );
+        for (let dir of foodDirections) {
+          if (priorityMoves[dir]) {
+            priorityMoves[dir] = true;
+          }
+        }
+      }
+    }
+  }
+
+  function isCoordinateHazard(x, y, hazards) {
+    return hazards.some((haz) => haz.x === x && haz.y === y);
+  }
+
+  function getDirectionsTowardNearestFood(head, foodArray, hazards) {
+    const directions = [];
+    if (!foodArray || foodArray.length === 0) return directions;
+
+    // Find nearest food
+    let nearestFood = null;
+    let minDistance = Infinity;
+
+    for (let food of foodArray) {
+      const dist = Math.abs(head.x - food.x) + Math.abs(head.y - food.y);
+      if (dist < minDistance && !isCoordinateHazard(food.x, food.y, hazards)) {
+        minDistance = dist;
+        nearestFood = food;
+      }
+    }
+
+    if (!nearestFood) return directions;
+
+    // Determine safe directions toward food
+    const dx = nearestFood.x - head.x;
+    const dy = nearestFood.y - head.y;
+
+    if (dx > 0 && !isCoordinateHazard(head.x + 1, head.y, hazards)) {
+      directions.push("right");
+    } else if (dx < 0 && !isCoordinateHazard(head.x - 1, head.y, hazards)) {
+      directions.push("left");
+    }
+
+    if (dy > 0 && !isCoordinateHazard(head.x, head.y + 1, hazards)) {
+      directions.push("up");
+    } else if (dy < 0 && !isCoordinateHazard(head.x, head.y - 1, hazards)) {
+      directions.push("down");
+    }
+
+    return directions;
+  }
+
   let myLength = gameState.you.body.length;
   let myHealth = gameState.you.health;
 
@@ -1167,7 +1294,7 @@ function findBestFood(snakeHead, foodLocations, gameState) {
   let foodScores = [];
   const myLength = gameState.you.body.length;
   const myHealth = gameState.you.health;
-  const isStarving = myHealth < 65; // threshold
+  const isStarving = myHealth < 31; // threshold
 
   // Check if we're currently in a hazard
   const inHazard = gameState.board.hazards.some(
