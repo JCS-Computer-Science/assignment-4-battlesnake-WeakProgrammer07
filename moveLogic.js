@@ -627,6 +627,15 @@ export default function move(gameState) {
           bestMoveAtDepth = move;
         }
       }
+      let myTail = myBody[myBody.length - 1];
+      if (
+        (myHead.x < myTail.x && move == "right") ||
+        (myHead.x > myTail.x && move == "left") ||
+        (myHead.y < myTail.y && move == "up") ||
+        (myHead.y > myTail.y && move == "down")
+      ) {
+        depthMoveScores[move] += 500;
+      }
       if (bestMoveAtDepth) {
         console.log(
           `Snake ID: ${gameState.you.id} Turn: ${gameState.turn} - Choosing best-scored safe move with ${depth} future-sense: ${bestMoveAtDepth} (score: ${bestScoreAtDepth})`
