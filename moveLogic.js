@@ -542,7 +542,7 @@ export default function move(gameState) {
     const tailBias = Math.max(0, myBody.length - 4);
     for (const move of tailPriorityMoves) {
       if (moveScores[move] !== undefined) {
-        moveScores[move] += tailBias * 10;
+        moveScores[move] += tailBias * 50;
       }
     }
     if (gameState.you.health > 50) {
