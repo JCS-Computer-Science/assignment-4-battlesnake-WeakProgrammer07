@@ -452,7 +452,7 @@ export default function move(gameState) {
       (move.x == 0 || move.x == gameState.board.width - 1) &&
       (move.y == 0 || move.y == gameState.board.height - 1);
 
-    if (isCorner) moveScores[move] -= 2500;
+    if (isCorner) moveScores[move] -= 500;
 
     if (gameState.you.health > 40) {
       let nextMoves = countExits(nextPos, gameState.you.body.length).count;
@@ -996,10 +996,6 @@ function futureSense(move, gameState, depth) {
   ) {
     return false;
   }
-  let x = 1;
-  if (mySnake.health == 100) {
-    x = 0;
-  }
   mySnake.health -= 1;
   for (let i = 1; i < myBody.length - 1; i++) {
     if (newHead.x == myBody[i].x && newHead.y == myBody[i].y) {
@@ -1125,13 +1121,13 @@ function penalizeHeadProximity(moveScores, myHead, gameState) {
       }
       // Determine penalty based on distance
       if (distance <= 1) {
-        moveScores[move] -= 200 * sizePenalty;
+        moveScores[move] -= 500 * sizePenalty;
       } else if (distance == 2) {
-        moveScores[move] -= 100 * sizePenalty;
+        moveScores[move] -= 300 * sizePenalty;
       } else if (distance == 3) {
-        moveScores[move] -= 50 * sizePenalty;
+        moveScores[move] -= 100 * sizePenalty;
       } else if (distance <= 5) {
-        moveScores[move] -= 20 * sizePenalty;
+        moveScores[move] -= 70 * sizePenalty;
       }
     }
   }
