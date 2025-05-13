@@ -496,6 +496,7 @@ export default function move(gameState) {
     moveScores = avoidTailsAboutToEat(gameState, myHead, moveScores);
 
     moveScores = enemyTrapped(gameState, moveScores);
+    moveScores = adjustScoresForHeadCollisions(gameState, moveScores);
 
     let myTail = myBody[myBody.length - 1];
     let secondLast = myBody[myBody.length - 2]; // To detect if tail is moving
@@ -672,23 +673,15 @@ export default function move(gameState) {
           riskyMoveScores[move] -= 40;
         }
       }
+      riskyMoveScores = adjustScoresForHeadCollisions(gameState, riskyMoveScores);
 
-      let bestFood = findBestFood(myHead, gameState.board.food, gameState);
-      if (bestFood) {
-        priorityMoves.right = bestFood.x > myHead.x;
-        priorityMoves.left = bestFood.x < myHead.x;
-        priorityMoves.up = bestFood.y > myHead.y;
-        priorityMoves.down = bestFood.y < myHead.y;
-      }
-
-      if (priorityMoves[move]) {
-        riskyMoveScores[move] += 500;
-      }
 
       let nextPos = getNextPosition(myHead, move);
       let exitAnalysis = countExits(nextPos);
       riskyMoveScores[move] += exitAnalysis.count * 50;
     });
+
+    riskyMoveScores = adjustScoresForHeadCollisions(gameState, riskyMoveScores);
 
     let bestRiskyScore = -Infinity;
     let bestRiskyMove = null;
@@ -835,7 +828,7 @@ export default function move(gameState) {
   }
 
   //  floodFill and countExits functions
-  function floodFill(pos, depth, visited, limit = 30) {
+  function floodFill(pos, depth, visited, limit = 15) {
     const key = `${pos.x},${pos.y}`;
     if (visited.has(key) || depth > limit) return 0;
     visited.add(key);
@@ -1527,6 +1520,54 @@ function enemyTrapped(gameState, moveScores) {
       if (yourNextToThatTile) {
         moveScores[lastOpenDir.name] =
           (moveScores[lastOpenDir.name] || 0) + 1500;
+      }
+    }
+  }
+
+  return moveScores;
+}
+
+
+function adjustScoresForHeadCollisions(gameState, moveScores) {
+  const myHead = gameState.you.body[0];
+  const myLength = gameState.you.body.length;
+
+  // Define score adjustments
+  const SHORTER_PENALTY = -2000;
+  const LONGER_BONUS = 1000;
+  const EQUAL_PENALTY = 0;
+
+  const myPossibleMoves = {
+    up: { x: myHead.x, y: myHead.y + 1 },
+    down: { x: myHead.x, y: myHead.y - 1 },
+    left: { x: myHead.x - 1, y: myHead.y },
+    right: { x: myHead.x + 1, y: myHead.y },
+  };
+
+  for (let snake of gameState.board.snakes) {
+    if (snake.id === gameState.you.id) continue;
+
+    const enemyHead = snake.body[0];
+    const enemyLength = snake.body.length;
+
+    const enemyPossibleMoves = [
+      { x: enemyHead.x + 1, y: enemyHead.y },
+      { x: enemyHead.x - 1, y: enemyHead.y },
+      { x: enemyHead.x, y: enemyHead.y + 1 },
+      { x: enemyHead.x, y: enemyHead.y - 1 },
+    ];
+
+    for (const [direction, myNextPos] of Object.entries(myPossibleMoves)) {
+      for (const enemyNextPos of enemyPossibleMoves) {
+        if (myNextPos.x === enemyNextPos.x && myNextPos.y === enemyNextPos.y) {
+          if (myLength < enemyLength) {
+            moveScores[direction] += SHORTER_PENALTY;
+          } else if (myLength > enemyLength) {
+            moveScores[direction] += LONGER_BONUS;
+          } else {
+            moveScores[direction] += EQUAL_PENALTY;
+          }
+        }
       }
     }
   }
